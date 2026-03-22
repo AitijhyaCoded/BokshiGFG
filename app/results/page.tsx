@@ -81,6 +81,21 @@ export default function ResultsPage() {
 
             <div className="prose prose-invert max-w-none text-slate-300 leading-relaxed space-y-6">
               <p className="whitespace-pre-wrap">{data.originalText}</p>
+              
+              {data.images && data.images.length > 0 && (
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {data.images.map((img: string, idx: number) => (
+                    <div key={idx} className="relative rounded-xl overflow-hidden border border-white/10 aspect-video bg-[#0a0e1a]/50 flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img 
+                        src={img} 
+                        alt={`Supporting visual ${idx + 1}`} 
+                        className="object-contain w-full h-full max-h-64"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </GlassCard>
         </div>

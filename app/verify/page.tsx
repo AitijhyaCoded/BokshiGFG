@@ -22,17 +22,27 @@ export default function VerifyPage() {
     let isMounted = true;
 
     async function runVerification() {
-      const text = sessionStorage.getItem('verifyInput');
-      if (!text) {
+      const mode = sessionStorage.getItem('verifyInputMode') || 'text';
+      const input = sessionStorage.getItem('verifyInput');
+      const fileType = sessionStorage.getItem('verifyFileType');
+      const fileName = sessionStorage.getItem('verifyFileName');
+
+      if (!input) {
         if (isMounted) router.push('/');
         return;
+      }
+
+      const payload: any = { mode, input };
+      if (mode === 'file') {
+        payload.fileType = fileType;
+        payload.fileName = fileName;
       }
 
       try {
         const res = await fetch('/api/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
+          body: JSON.stringify(payload)
         });
         
         if (!res.body) throw new Error('No stream in response');

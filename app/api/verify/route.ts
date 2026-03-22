@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { HumanMessage } from '@langchain/core/messages';
 import { TavilySearchAPIRetriever } from '@langchain/community/retrievers/tavily_search_api';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { StructuredOutputParser } from '@langchain/core/output_parsers';
@@ -7,10 +8,12 @@ import { z } from 'zod';
 
 export async function POST(req: NextRequest) {
   try {
-    const { text } = await req.json();
+    const body = await req.json();
+    const mode = body.mode || 'text';
+    const input = body.input;
 
-    if (!text) {
-      return new Response(JSON.stringify({ error: 'No text provided' }), { status: 400 });
+    if (!input) {
+      return new Response(JSON.stringify({ error: 'No input provided' }), { status: 400 });
     }
 
     const encoder = new TextEncoder();
@@ -35,27 +38,79 @@ export async function POST(req: NextRequest) {
             return text.replace(/```(?:json)?\n?/gi, "").replace(/```\n?/gi, "").trim();
           };
 
+          let textToVerify = input;
+          let images: string[] = [];
+          let originalContentToDisplay = textToVerify;
+
+          if (mode === 'url') {
+            sendStatus('extracting');
+            sendLog('FETCHING URL CONTENT VIA TAVILY...');
+            const tavilyRes = await fetch('https://api.tavily.com/extract', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                api_key: process.env.TAVILY_API_KEY, 
+                urls: [input], 
+                include_images: true 
+              })
+            });
+            if (!tavilyRes.ok) throw new Error("Failed to fetch URL content");
+            
+            const tavilyData = await tavilyRes.json();
+            const firstResult = tavilyData.results[0];
+            textToVerify = firstResult.raw_content;
+            images = firstResult.images || [];
+            originalContentToDisplay = `Source: ${input}\n\n${textToVerify}`;
+          } else if (mode === 'file') {
+             textToVerify = `Extract claims from the provided ${body.fileType} document.`;
+             originalContentToDisplay = `Uploaded Document: ${body.fileName}`;
+             if (body.fileType?.startsWith('image/')) {
+                 images.push(input);
+             }
+          }
+
           // 1. Extract Claims
           sendStatus('extracting');
           sendLog('INITIATING EXTRACTOR AGENT...');
           
           const extractParser = StructuredOutputParser.fromZodSchema(
             z.object({
-              claims: z.array(z.string()).describe("List of core core, falsifiable claims made in the text")
+              documentSummary: z.string().describe("A summary or direct transcription of the provided text/document to be used as context"),
+              claims: z.array(z.string()).describe("List of core, falsifiable claims made in the text")
             })
           );
           
-          const extractPrompt = PromptTemplate.fromTemplate(
-            "You are a fact-checking assistant. Extract the distinct, verifyable claims from the following text.\n{format_instructions}\n\nText:\n{text}"
-          );
+          let promptText = `You are a fact-checking assistant. Extract the distinct, verifyable claims from the provided text or document.\n${extractParser.getFormatInstructions()}\n\n`;
           
-          const extractChain = extractPrompt.pipe(gemini).pipe(cleanMarkdown).pipe(extractParser);
+          if (mode === 'text' || mode === 'url') {
+            promptText += `Text:\n${textToVerify}`;
+          } else {
+            promptText += `Please analyze the attached document.`;
+          }
+          
+          let extractMessages: any[];
+          if (mode === 'file') {
+            const base64Data = input.split(',')[1] || input;
+            extractMessages = [
+              { type: "text", text: promptText },
+              { type: "media", mimeType: body.fileType, data: base64Data }
+            ];
+          } else {
+            extractMessages = [
+              { type: "text", text: promptText }
+            ];
+          }
+          
+          const extractChain = gemini.pipe(cleanMarkdown).pipe(extractParser);
           sendLog('PARSING TEXT FOR DISTINCT CLAIMS...');
           
-          const { claims } = await extractChain.invoke({
-            text,
-            format_instructions: extractParser.getFormatInstructions(),
-          });
+          const { documentSummary, claims } = await extractChain.invoke([
+            new HumanMessage({ content: extractMessages })
+          ]);
+          
+          if (mode === 'text') originalContentToDisplay = textToVerify;
+          else if (mode === 'file') originalContentToDisplay = `Uploaded Document: ${body.fileName}\n\nSummary:\n${documentSummary}`;
+          // for url we keep the raw text as originalContentToDisplay
           
           sendLog(`EXTRACTED ${claims.length} CLAIMS.`);
 
@@ -132,7 +187,7 @@ export async function POST(req: NextRequest) {
           sendLog('ANALYZING SENTIMENT, BIAS AND COMPLETING VERIFICATION...');
           
           const finalOutput = await verifyChain.invoke({
-            text,
+            text: documentSummary || textToVerify,
             context: contextStr,
             format_instructions: verifyParser.getFormatInstructions()
           });
@@ -140,7 +195,8 @@ export async function POST(req: NextRequest) {
           // Embed original text in the payload for the results page
           const finalPayload = {
             ...finalOutput,
-            originalText: text
+            originalText: originalContentToDisplay,
+            images: images
           };
 
           sendLog('VERIFICATION COMPLETE. FINALIZING PAYLOAD...');

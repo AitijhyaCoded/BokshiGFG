@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Link as LinkIcon, FileText, CheckCircle2, BarChart3, ShieldAlert, ArrowRight, Bell, HelpCircle } from 'lucide-react';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -11,12 +11,51 @@ import { cn } from '@/components/ui/glass-card';
 export default function Dashboard() {
   const router = useRouter();
   const [inputValue, setInputValue] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleVerify = () => {
     if (inputValue.trim()) {
-      sessionStorage.setItem('verifyInput', inputValue);
+      let isUrl = false;
+      try {
+        new URL(inputValue.trim());
+        isUrl = true;
+      } catch {
+        isUrl = false;
+      }
+      
+      sessionStorage.setItem('verifyInputMode', isUrl ? 'url' : 'text');
+      sessionStorage.setItem('verifyInput', inputValue.trim());
+      router.push('/verify');
     }
-    router.push('/verify');
+  };
+
+  const triggerAddUrl = () => {
+    const url = prompt("Enter the URL to verify:");
+    if (url) {
+      sessionStorage.setItem('verifyInputMode', 'url');
+      sessionStorage.setItem('verifyInput', url.trim());
+      router.push('/verify');
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      try {
+        sessionStorage.setItem('verifyInputMode', 'file');
+        sessionStorage.setItem('verifyInput', base64);
+        sessionStorage.setItem('verifyFileType', file.type);
+        sessionStorage.setItem('verifyFileName', file.name);
+        router.push('/verify');
+      } catch (err) {
+        alert("File is too large or an error occurred.");
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -76,12 +115,19 @@ export default function Dashboard() {
             />
             <div className="flex items-center justify-between p-2 border-t border-white/5">
               <div className="flex gap-2">
-                <Button variant="ghost" className="py-2 px-3 text-xs rounded-lg">
+                <Button variant="ghost" className="py-2 px-3 text-xs rounded-lg" onClick={triggerAddUrl}>
                   <LinkIcon className="w-4 h-4" /> Add URL
                 </Button>
-                <Button variant="ghost" className="py-2 px-3 text-xs rounded-lg">
+                <Button variant="ghost" className="py-2 px-3 text-xs rounded-lg" onClick={() => fileInputRef.current?.click()}>
                   <FileText className="w-4 h-4" /> Upload Doc
                 </Button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileUpload} 
+                  className="hidden" 
+                  accept=".pdf,image/*" 
+                />
               </div>
               <Button onClick={handleVerify} className="rounded-xl px-8 shadow-[0_0_20px_rgba(125,211,252,0.1)]">
                 <CheckCircle2 className="w-4 h-4" /> Verify Claim
