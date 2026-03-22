@@ -5,10 +5,6 @@ import { TavilySearchAPIRetriever } from '@langchain/community/retrievers/tavily
 import { PromptTemplate } from '@langchain/core/prompts';
 import { StructuredOutputParser } from '@langchain/core/output_parsers';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { verifications } from '@/lib/schema';
-import { headers } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -207,36 +203,6 @@ export async function POST(req: NextRequest) {
             originalText: originalContentToDisplay,
             images: images
           };
-
-          // 4. Save to Database
-          const session = await auth.getSession({
-            fetchOptions: {
-              headers: await headers()
-            }
-          });
-
-          if (session?.data?.user) {
-            try {
-              await db.insert(verifications).values({
-                userId: session.data.user.id,
-                originalText: finalPayload.originalText,
-                accuracy: finalPayload.accuracy,
-                documentSummary: documentSummary || '',
-                verifiedClaims: finalPayload.verifiedClaims,
-                stats: {
-                  trueCount: finalPayload.trueCount,
-                  partialCount: finalPayload.partialCount,
-                  falseCount: finalPayload.falseCount,
-                },
-                aiReasoning: finalPayload.aiReasoning,
-                images: finalPayload.images,
-              });
-              sendLog('RESULT PERSISTED TO NEON DATABASE.');
-            } catch (dbError: any) {
-              sendLog(`DATABASE SYNC ERROR: ${dbError.message || 'Operation failed'}`);
-              console.error("Failed to save to DB:", dbError);
-            }
-          }
 
           sendLog('VERIFICATION COMPLETE. FINALIZING PAYLOAD...');
 
