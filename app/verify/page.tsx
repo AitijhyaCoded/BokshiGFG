@@ -206,10 +206,10 @@ export default function VerifyPage() {
           </GlassCard>
 
           <GlassCard className="p-6 flex-1 flex flex-col">
-            <div className="flex items-center gap-2 mb-4">
+            {/*<div className="flex items-center gap-2 mb-4">
               <Sparkles className="w-4 h-4 text-[#c8a0f0]" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8a0f0]">System Insight</h3>
-            </div>
+            </div>*/}
             <div className="mb-6">
               <p className="text-white font-medium leading-relaxed">
                 "Initial scans show strong alignment with 2023 climate studies, but the '40% reduction' claim requires deeper secondary verification."

@@ -6,6 +6,7 @@ import { ShieldCheck, LayoutDashboard, History, Shield, Settings, LifeBuoy, LogO
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useSidebar } from '@/hooks/use-sidebar';
+import { authClient } from '@/lib/auth-client';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -119,9 +120,9 @@ export function Sidebar() {
           {!isCollapsed && <span>Support</span>}
         </button>
         <button 
-          suppressHydrationWarning 
+          onClick={() => authClient.signOut({ fetchOptions: { onSuccess: () => window.location.href = "/login" } })}
           className={clsx(
-            "flex items-center rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors h-12 w-full",
+            "flex items-center rounded-xl text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/5 transition-colors h-12 w-full",
             isCollapsed ? "justify-center px-0" : "px-4 gap-3"
           )}
           title={isCollapsed ? "Log Out" : undefined}
