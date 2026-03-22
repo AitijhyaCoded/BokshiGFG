@@ -19,25 +19,65 @@ export default function VerifyPage() {
   const [logs, setLogs] = useState<string[]>([]);
 
   useEffect(() => {
-    // Simulate the AI pipeline
-    const timer1 = setTimeout(() => {
-      setCurrentStep(2);
-      setLogs(prev => [...prev, 'CONNECTING TO ARXIV.ORG...', 'PARSING METADATA OBJECTS...']);
-    }, 1500);
+    let isMounted = true;
 
-    const timer2 = setTimeout(() => {
-      setCurrentStep(3);
-      setLogs(prev => [...prev, 'INITIATING SEMANTIC SEARCH...', 'ANALYZING SENTIMENT AND BIAS...']);
-    }, 3000);
+    async function runVerification() {
+      const text = sessionStorage.getItem('verifyInput');
+      if (!text) {
+        if (isMounted) router.push('/');
+        return;
+      }
 
-    const timer3 = setTimeout(() => {
-      router.push('/results');
-    }, 4500);
+      try {
+        const res = await fetch('/api/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        
+        if (!res.body) throw new Error('No stream in response');
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+
+        let done = false;
+        while (!done && isMounted) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
+          if (value) {
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n').filter(Boolean);
+            for (const line of lines) {
+              try {
+                const parsed = JSON.parse(line);
+                if (parsed.type === 'status') {
+                   if (parsed.data === 'extracting') setCurrentStep(1);
+                   if (parsed.data === 'searching') setCurrentStep(2);
+                   if (parsed.data === 'verifying') setCurrentStep(3);
+                } else if (parsed.type === 'log') {
+                   setLogs(prev => [...prev, parsed.data]);
+                } else if (parsed.type === 'result') {
+                   sessionStorage.setItem('verifyResult', JSON.stringify(parsed.data));
+                   if (isMounted) router.push('/results');
+                   return;
+                } else if (parsed.type === 'error') {
+                   setLogs(prev => [...prev, `System Error: ${parsed.data}`]);
+                }
+              } catch (e) {
+                console.error("Failed parsing line", line);
+              }
+            }
+          }
+        }
+      } catch (error) {
+         setLogs(prev => [...prev, 'FATAL ERROR CHECKING STREAM']);
+      }
+    }
+
+    runVerification();
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
+      isMounted = false;
     };
   }, [router]);
 

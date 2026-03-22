@@ -14,11 +14,9 @@ export default function Dashboard() {
 
   const handleVerify = () => {
     if (inputValue.trim()) {
-      router.push(`/verify?q=${encodeURIComponent(inputValue)}`);
-    } else {
-      // For demo purposes, just push to verify anyway if empty
-      router.push('/verify');
+      sessionStorage.setItem('verifyInput', inputValue);
     }
+    router.push('/verify');
   };
 
   return (
