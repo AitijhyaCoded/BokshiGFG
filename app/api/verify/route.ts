@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
         try {
           const gemini = new ChatGoogleGenerativeAI({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3.1-flash-lite-preview',
             maxOutputTokens: 8192,
           });
 
@@ -75,12 +75,13 @@ export async function POST(req: NextRequest) {
           
           const extractParser = StructuredOutputParser.fromZodSchema(
             z.object({
-              documentSummary: z.string().describe("A summary or direct transcription of the provided text/document to be used as context"),
-              claims: z.array(z.string()).describe("List of core, falsifiable claims made in the text")
+              documentSummary: z.string().describe("A brief, 2-3 sentence summary of the provided text/document to be used as context"),
+              cleanedContent: z.string().describe("The primary article body or document content, stripped of any navigation links, sidebars, footers, or repetitive metadata. If markdown links are present in the source, keep only the text part if they are navigational."),
+              claims: z.array(z.string()).describe("List of top 3 to 5 most important, core, falsifiable claims made in the text")
             })
           );
           
-          let promptText = `You are a fact-checking assistant. Extract the distinct, verifyable claims from the provided text or document.\n${extractParser.getFormatInstructions()}\n\n`;
+          let promptText = `You are a fact-checking assistant. Your goal is to extract the core information from the provided input.\n\nCRITICAL: If the input contains web-scraped noise (like Wikipedia navigation menus, "Contribute" sections, "Main Page" links, sidebars, or footers), you MUST IGNORE them completely. Only extract the primary body text of the article or document.\n\n${extractParser.getFormatInstructions()}\n\n`;
           
           if (mode === 'text' || mode === 'url') {
             promptText += `Text:\n${textToVerify}`;
@@ -104,13 +105,17 @@ export async function POST(req: NextRequest) {
           const extractChain = gemini.pipe(cleanMarkdown).pipe(extractParser);
           sendLog('PARSING TEXT FOR DISTINCT CLAIMS...');
           
-          const { documentSummary, claims } = await extractChain.invoke([
+          const { documentSummary, cleanedContent, claims } = await extractChain.invoke([
             new HumanMessage({ content: extractMessages })
           ]);
           
-          if (mode === 'text') originalContentToDisplay = textToVerify;
-          else if (mode === 'file') originalContentToDisplay = `Uploaded Document: ${body.fileName}\n\nSummary:\n${documentSummary}`;
-          // for url we keep the raw text as originalContentToDisplay
+          if (mode === 'text') {
+            originalContentToDisplay = textToVerify;
+          } else if (mode === 'file') {
+            originalContentToDisplay = `## Uploaded Document Summary\n\n${documentSummary}\n\n## Content Preview\n\n${cleanedContent}`;
+          } else if (mode === 'url') {
+            originalContentToDisplay = cleanedContent;
+          }
           
           sendLog(`EXTRACTED ${claims.length} CLAIMS.`);
 
@@ -204,8 +209,10 @@ export async function POST(req: NextRequest) {
           controller.enqueue(encoder.encode(JSON.stringify({ type: 'result', data: finalPayload }) + '\n'));
           controller.close();
         } catch (error: any) {
-          sendLog(`ERROR: ${error.message}`);
-          controller.enqueue(encoder.encode(JSON.stringify({ type: 'error', data: error.message }) + '\n'));
+          const rawMsg = error.message || String(error);
+          const safeMsg = rawMsg.length > 250 ? rawMsg.substring(0, 250) + '... [Truncated due to length]' : rawMsg;
+          sendLog(`ERROR: ${safeMsg}`);
+          controller.enqueue(encoder.encode(JSON.stringify({ type: 'error', data: safeMsg }) + '\n'));
           controller.close();
         }
       }

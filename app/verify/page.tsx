@@ -17,6 +17,12 @@ export default function VerifyPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [logs, setLogs] = useState<string[]>([]);
+  const [sourceData, setSourceData] = useState<{
+    mode: string;
+    input: string;
+    fileName?: string | null;
+    fileType?: string | null;
+  } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -26,6 +32,8 @@ export default function VerifyPage() {
       const input = sessionStorage.getItem('verifyInput');
       const fileType = sessionStorage.getItem('verifyFileType');
       const fileName = sessionStorage.getItem('verifyFileName');
+
+      setSourceData({ mode, input: input || '', fileName, fileType });
 
       if (!input) {
         if (isMounted) router.push('/');
@@ -51,13 +59,16 @@ export default function VerifyPage() {
         const decoder = new TextDecoder();
 
         let done = false;
+        let buffer = '';
         while (!done && isMounted) {
           const { value, done: readerDone } = await reader.read();
           done = readerDone;
           if (value) {
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n').filter(Boolean);
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // keep the incomplete line in buffer
             for (const line of lines) {
+              if (!line.trim()) continue;
               try {
                 const parsed = JSON.parse(line);
                 if (parsed.type === 'status') {
@@ -179,17 +190,19 @@ export default function VerifyPage() {
               <FileText className="w-4 h-4 text-slate-500" />
             </div>
             <p className="text-sm text-slate-300 leading-relaxed line-clamp-4 mb-4">
-              Recent findings suggest that the implementation of decentralized protocols in urban logistics has resulted in a 40% reduction in carbon emissions across major metropolitan areas. This breakthrough, documented by the Global Environmental Agency, indicates that smaller, peer-to-peer delivery networks are significantly more efficient than traditional hub-and-spoke models.
+              {sourceData?.input || 'Loading source content...'}
             </p>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-              <div className="w-8 h-8 rounded-lg bg-[#c8a0f0]/10 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-[#c8a0f0]" />
+            {sourceData?.mode === 'file' && sourceData.fileName && (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="w-8 h-8 rounded-lg bg-[#c8a0f0]/10 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-[#c8a0f0]" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-white">{sourceData.fileName}</p>
+                  <p className="text-[10px] text-slate-500">{sourceData.fileType || 'Document'} • Text Analysis</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-medium text-white">Urban_Efficiency_Report.pdf</p>
-                <p className="text-[10px] text-slate-500">1.2 MB • Text Analysis</p>
-              </div>
-            </div>
+            )}
           </GlassCard>
 
           <GlassCard className="p-6 flex-1 flex flex-col">
