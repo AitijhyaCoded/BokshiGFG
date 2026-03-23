@@ -188,6 +188,67 @@ export async function POST(req: NextRequest) {
             format_instructions: aiDetectionParser.getFormatInstructions()
           });
 
+          // 3.5 Image Analysis
+          let imageAnalysisResult = null;
+          if (images.length > 0) {
+            sendLog('PERFORMING IMAGE FORENSICS ANALYSIS...');
+            
+            const imageAnalysisParser = StructuredOutputParser.fromZodSchema(
+              z.object({
+                aiProbability: z.number().describe("Probability score (0-100%) indicating if the image is AI-generated or deepfake"),
+                deepfake: z.boolean().describe("Whether the image is suspected to be a deepfake"),
+                relevance: z.number().describe("Score 0-100 indicating relevance of the image to the overall context/article"),
+                reasoning: z.string().describe("A 2-3 sentence reasoning for the image analysis")
+              })
+            );
+
+            const imageAnalysisPrompt = `Analyze the provided image in the context of the following text. 
+Check for signs of AI generation, indicators of deepfake, and assess how relevant the image is to the context.
+
+Context:
+${documentSummary || textToVerify}
+
+${imageAnalysisParser.getFormatInstructions()}`;
+
+            let imageMessages: any[] = [ { type: "text", text: imageAnalysisPrompt } ];
+            
+            const imgUrlOrData = images[0];
+            if (imgUrlOrData.startsWith('data:')) {
+               const mimeType = imgUrlOrData.split(';')[0].split(':')[1];
+               const base64Data = imgUrlOrData.split(',')[1];
+               imageMessages.push({ type: "media", mimeType, data: base64Data });
+            } else if (imgUrlOrData.startsWith('http')) {
+               try {
+                 sendLog('FETCHING IMAGE FOR ANALYSIS...');
+                 const imgRes = await fetch(imgUrlOrData, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' } });
+                 if (imgRes.ok) {
+                   const arrayBuffer = await imgRes.arrayBuffer();
+                   const buffer = Buffer.from(arrayBuffer);
+                   const base64Data = buffer.toString('base64');
+                   const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+                   if (mimeType.startsWith('image/')) {
+                       imageMessages.push({ type: "media", mimeType, data: base64Data });
+                   } else {
+                       sendLog('URL IS NOT AN IMAGE.');
+                   }
+                 }
+               } catch (e) {
+                 sendLog('FAILED TO FETCH IMAGE FOR ANALYSIS.');
+               }
+            }
+
+            if (imageMessages.length > 1) {
+              try {
+                const imgChain = gemini.pipe(cleanMarkdown).pipe(imageAnalysisParser);
+                imageAnalysisResult = await imgChain.invoke([ new HumanMessage({ content: imageMessages }) ]);
+                sendLog('IMAGE ANALYSIS COMPLETE.');
+              } catch(e) {
+                sendLog('IMAGE ANALYSIS FAILED.');
+                console.error(e);
+              }
+            }
+          }
+
           // 4. Verify
           sendStatus('verifying');
           sendLog('CROSS-REFERENCING EXTRACTED CLAIMS WITH SEARCH CONTEXT...');
@@ -246,7 +307,8 @@ export async function POST(req: NextRequest) {
             ...finalOutput,
             originalText: originalContentToDisplay,
             images: images,
-            aiDetection: aiDetectionResult
+            aiDetection: aiDetectionResult,
+            imageAnalysis: imageAnalysisResult
           };
 
           sendLog('VERIFICATION COMPLETE. FINALIZING PAYLOAD...');

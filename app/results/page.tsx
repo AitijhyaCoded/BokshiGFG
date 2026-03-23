@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Share2, ChevronDown, AlertCircle, CheckCircle2, Sparkles, FileText, Link as LinkIcon, RotateCcw, ShieldCheck, ShieldAlert, Shield, Fingerprint } from 'lucide-react';
+import { Share2, ChevronDown, AlertCircle, CheckCircle2, Sparkles, FileText, Link as LinkIcon, RotateCcw, ShieldCheck, ShieldAlert, Shield, Fingerprint, Image as ImageIcon } from 'lucide-react';
 import { GlassCard } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'motion/react';
@@ -338,6 +338,61 @@ export default function ResultsPage() {
               <p className="text-xs text-slate-300 leading-relaxed">
                 {data.aiDetection?.reasoning || data.aiReasoning || "No comprehensive AI analysis was generated for this dataset."}
               </p>
+            </GlassCard>
+          </motion.div>
+
+          {/* Image Insight Card */}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.45 }}
+          >
+            <GlassCard className="p-6 bg-gradient-to-br from-[#f472b6]/10 via-transparent to-transparent border-[#f472b6]/20 relative overflow-hidden group flex flex-col gap-4">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#f472b6]/10 rounded-full blur-3xl group-hover:bg-[#f472b6]/20 transition-colors" />
+              <div className="flex items-center gap-2 mb-2 relative z-10">
+                <ImageIcon className="w-4 h-4 text-[#f472b6]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#f472b6]">Image Insights</h3>
+              </div>
+              
+              {data.images && data.images.length > 0 ? (
+                data.imageAnalysis ? (
+                  <div className="space-y-4 relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-16 h-16 shrink-0">
+                          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                            <motion.circle 
+                              cx="18" cy="18" r="16" fill="none" stroke="#f472b6" strokeWidth="3" 
+                              strokeDasharray="100, 100"
+                              initial={{ strokeDashoffset: 100 }}
+                              animate={{ strokeDashoffset: 100 - data.imageAnalysis.aiProbability }}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-[10px] font-bold text-white">{data.imageAnalysis.aiProbability}%</span>
+                          </div>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">AI Gen Prob.</p>
+                        <p className="text-[10px] text-slate-500 flex items-center gap-1 flex-wrap">
+                          Context Relevance: <span className="text-white font-medium">{data.imageAnalysis.relevance}%</span>
+                          {data.imageAnalysis.deepfake && <span className="text-red-400 font-bold px-1.5 py-0.5 rounded border border-red-500/30 bg-red-500/10 text-[8px] mt-1 block w-fit">Deepfake suspected</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed pt-3 border-t border-white/5">
+                      {data.imageAnalysis.reasoning}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic relative z-10">Image analysis unavailable.</p>
+                )
+              ) : (
+                <div className="flex items-center justify-center h-20 border border-dashed border-white/10 rounded-xl bg-black/20 relative z-10">
+                  <p className="text-xs text-slate-500 italic">No image</p>
+                </div>
+              )}
             </GlassCard>
           </motion.div>
         </div>
