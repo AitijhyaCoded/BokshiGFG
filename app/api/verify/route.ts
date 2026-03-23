@@ -146,7 +146,32 @@ export async function POST(req: NextRequest) {
           }
           sendLog('GATHERED SECONDARY CONTEXT FROM TAVILY.');
 
-          // 3. Verify
+          // 3. AI Detection (Bonus)
+          const aiDetectionParser = StructuredOutputParser.fromZodSchema(
+            z.object({
+              probability: z.number().describe("Probability score (0-100%) indicating if it is AI-generated"),
+              reasoning: z.string().describe("A 2-sentence reasoning for the score")
+            })
+          );
+
+          const aiDetectionPrompt = PromptTemplate.fromTemplate(
+            `Analyze this text for AI generation markers, such as low perplexity, lack of burstiness (uniform sentence length), and common LLM tropes. Return a probability score (0-100%) indicating if it is AI-generated, and a 2-sentence reasoning.
+
+            {format_instructions}
+
+            Text:
+            {text}`
+          );
+
+          const aiDetectionChain = aiDetectionPrompt.pipe(gemini).pipe(cleanMarkdown).pipe(aiDetectionParser);
+          
+          sendLog('PERFORMING AI FORENSICS ANALYSIS...');
+          const aiDetectionResult = await aiDetectionChain.invoke({
+            text: cleanedContent || textToVerify,
+            format_instructions: aiDetectionParser.getFormatInstructions()
+          });
+
+          // 4. Verify
           sendStatus('verifying');
           sendLog('CROSS-REFERENCING EXTRACTED CLAIMS WITH SEARCH CONTEXT...');
 
@@ -203,7 +228,8 @@ export async function POST(req: NextRequest) {
           const finalPayload = {
             ...finalOutput,
             originalText: originalContentToDisplay,
-            images: images
+            images: images,
+            aiDetection: aiDetectionResult
           };
 
           sendLog('VERIFICATION COMPLETE. FINALIZING PAYLOAD...');

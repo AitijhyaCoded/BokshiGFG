@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Share2, ChevronDown, AlertCircle, CheckCircle2, Sparkles, FileText, Link as LinkIcon, RotateCcw, ShieldCheck, ShieldAlert, Shield } from 'lucide-react';
+import { Share2, ChevronDown, AlertCircle, CheckCircle2, Sparkles, FileText, Link as LinkIcon, RotateCcw, ShieldCheck, ShieldAlert, Shield, Fingerprint } from 'lucide-react';
 import { GlassCard } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'motion/react';
@@ -226,7 +226,48 @@ export default function ResultsPage() {
               })}
             </AnimatePresence>
 
-            {/* Global Bias Insight */}
+            {/* Forensics Card */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <GlassCard className="p-6 bg-gradient-to-br from-[#7dd3fc]/10 via-transparent to-transparent border-[#7dd3fc]/20 relative overflow-hidden group">
+                <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#7dd3fc]/10 rounded-full blur-3xl group-hover:bg-[#7dd3fc]/20 transition-colors" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Fingerprint className="w-4 h-4 text-[#7dd3fc]" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#7dd3fc]">Forensics</h3>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-6">
+                  <div className="relative w-20 h-20">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                      <motion.circle 
+                        cx="18" cy="18" r="16" fill="none" stroke="#7dd3fc" strokeWidth="3" 
+                        strokeDasharray="100, 100"
+                        initial={{ strokeDashoffset: 100 }}
+                        animate={{ strokeDashoffset: 100 - (data.aiDetection?.probability || 0) }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-sm font-bold text-white">{data.aiDetection?.probability || 0}%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">AI Probability</p>
+                    <p className="text-[8px] text-slate-500 leading-tight">
+                      Markers: low perplexity, uniform length, & tropes
+                    </p>
+                  </div>
+                </div>
+              </GlassCard>
+            </motion.div>
+
+            {/* AI Insight Insight */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -236,10 +277,10 @@ export default function ResultsPage() {
                 <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#c8a0f0]/10 rounded-full blur-3xl group-hover:bg-[#c8a0f0]/20 transition-colors" />
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles className="w-4 h-4 text-[#c8a0f0]" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8a0f0]">Bias & Sentiment Insight</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8a0f0]">AI Insight</h3>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  {data.aiReasoning || "No comprehensive sentiment or bias analysis was generated for this dataset."}
+                  {data.aiDetection?.reasoning || data.aiReasoning || "No comprehensive AI analysis was generated for this dataset."}
                 </p>
               </GlassCard>
             </motion.div>
