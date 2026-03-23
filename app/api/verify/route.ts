@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
               body: JSON.stringify({ 
                 api_key: process.env.TAVILY_API_KEY, 
                 urls: [input], 
-                include_images: true 
+                include_images: false 
               })
             });
             if (!tavilyRes.ok) throw new Error("Failed to fetch URL content");
@@ -61,7 +61,24 @@ export async function POST(req: NextRequest) {
             const tavilyData = await tavilyRes.json();
             const firstResult = tavilyData.results[0];
             textToVerify = firstResult.raw_content;
-            images = firstResult.images || [];
+            
+            // Specifically look for og:image in the <head>
+            try {
+              sendLog('EXTRACTING MAIN IMAGE (og:image)...');
+              const pageRes = await fetch(input, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' } });
+              if (pageRes.ok) {
+                const html = await pageRes.text();
+                const ogImageRegex = /<meta\s+(?:property|name)=["']og:image["']\s+content=["']([^"']+)["']/i;
+                const ogImageRegexAlt = /<meta\s+content=["']([^"']+)["']\s+(?:property|name)=["']og:image["']/i;
+                const match = html.match(ogImageRegex) || html.match(ogImageRegexAlt);
+                if (match && match[1]) {
+                  images = [match[1]];
+                }
+              }
+            } catch (e) {
+              sendLog('FAILED TO EXTRACT MAIN IMAGE. SKIPPING.');
+            }
+            
             originalContentToDisplay = `Source: ${input}\n\n${textToVerify}`;
           } else if (mode === 'file') {
              textToVerify = `Extract claims from the provided ${body.fileType} document.`;
