@@ -1,6 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { jsPDF } from 'jspdf';
+import { toPng } from 'html-to-image';
+
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Share2, ChevronDown, AlertCircle, CheckCircle2, Sparkles, FileText, Link as LinkIcon, RotateCcw, ShieldCheck, ShieldAlert, Shield, Fingerprint, Image as ImageIcon } from 'lucide-react';
 import { GlassCard } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +15,37 @@ import ReactMarkdown from 'react-markdown';
 export default function ResultsPage() {
   const router = useRouter();
   const [data, setData] = useState<any>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  const generatePDF = async () => {
+    if (!reportRef.current || !data) return;
+    setIsGeneratingPDF(true);
+    
+    try {
+      const element = reportRef.current;
+      const imgData = await toPng(element, {
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+      });
+      
+      const width = element.offsetWidth;
+      const height = element.offsetHeight;
+      
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [width, height]
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+      pdf.save('Bokshi_Verification_Report.pdf');
+    } catch (error) {
+      console.error("Failed to generate PDF", error);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   useEffect(() => {
     const rawData = sessionStorage.getItem('verifyResult');
@@ -148,8 +182,18 @@ export default function ResultsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="secondary" className="rounded-xl bg-white/5 border-white/10 hover:bg-white/10">
-            <Share2 className="w-4 h-4 mr-2" /> Share Report
+          <Button 
+            onClick={generatePDF}
+            disabled={isGeneratingPDF}
+            variant="secondary" 
+            className="rounded-xl bg-white/5 border-white/10 hover:bg-white/10"
+          >
+            {isGeneratingPDF ? (
+              <div className="w-4 h-4 mr-2 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4 mr-2" />
+            )}
+            {isGeneratingPDF ? 'Generating...' : 'Share Report'}
           </Button>
           <Button onClick={() => router.push('/')} className="rounded-xl bg-[#7dd3fc] text-[#0a0e1a] hover:bg-[#7dd3fc]/90">
             <RotateCcw className="w-4 h-4 mr-2" /> New Check
@@ -404,6 +448,115 @@ export default function ResultsPage() {
         <span>Secure Verification</span>
         <span>Multimodal AI Layer</span>
       </footer>
+
+      {/* Hidden Printable Report */}
+      <div className="fixed top-0 left-0 w-[800px] -z-50 opacity-0 pointer-events-none">
+        <div ref={reportRef} className="bg-white text-slate-900 p-12 w-[800px] flex flex-col gap-8 font-sans">
+          {/* Header */}
+          <div className="flex border-b pb-6 border-slate-200 justify-between items-end">
+            <div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1">Bokshi Fact Engine</h1>
+              <p className="text-slate-500 font-medium tracking-widest uppercase text-xs">AI Verification Report</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#0ea5e9]">Accuracy Score</p>
+              <p className="text-4xl font-black text-[#0ea5e9] -mt-1">{data.accuracy}%</p>
+            </div>
+          </div>
+
+          {/* Verdict Segment */}
+          <div className={`p-6 rounded-xl border ${verdict.label === 'HIGHLY RELIABLE' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : verdict.label === 'MIXED SIGNALS' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-red-50 border-red-200 text-red-900'}`}>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Final Verdict</p>
+            <h2 className="text-2xl font-black">{verdict.label}</h2>
+          </div>
+
+          {/* Original Context */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">Original Material</h3>
+            <div className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-6 rounded-xl border border-slate-200 prose prose-sm max-w-none">
+               <ReactMarkdown>{data.originalText}</ReactMarkdown>
+            </div>
+            
+            {data.images && data.images.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Supporting Media</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {data.images.map((img: string, idx: number) => (
+                    <img key={idx} src={img} className="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm" alt="Supporting media" crossOrigin="anonymous" />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* AI and Image Insights */}
+          <div className="grid grid-cols-2 gap-6">
+            <div className="bg-purple-50 p-6 rounded-xl border border-purple-200">
+              <h3 className="text-[10px] font-black text-purple-900 uppercase tracking-widest mb-3">AI Forensics</h3>
+              <p className="text-3xl font-black text-purple-600 mb-2">{data.aiDetection?.probability || 0}% <span className="text-xs text-purple-800 font-bold uppercase tracking-wider">AI Gen Prob</span></p>
+              <p className="text-xs text-purple-800 leading-relaxed font-medium">{data.aiDetection?.reasoning || data.aiReasoning || "No insights available."}</p>
+            </div>
+
+            {data.images && data.images.length > 0 && data.imageAnalysis ? (
+              <div className="bg-pink-50 p-6 rounded-xl border border-pink-200">
+                <h3 className="text-[10px] font-black text-pink-900 uppercase tracking-widest mb-3">Image Insights</h3>
+                <p className="text-3xl font-black text-pink-600 mb-2">{data.imageAnalysis?.aiProbability || 0}% <span className="text-xs text-pink-800 font-bold uppercase tracking-wider">AI Gen Prob</span></p>
+                <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs text-pink-800 font-bold bg-white/50 px-2 py-1 rounded">Relevance: {data.imageAnalysis.relevance}%</span>
+                    {data.imageAnalysis.deepfake && <span className="text-[10px] font-black uppercase text-red-600 border border-red-300 bg-red-100 px-2 py-1 rounded">Deepfake</span>}
+                </div>
+                <p className="text-xs text-pink-800 leading-relaxed font-medium">{data.imageAnalysis.reasoning}</p>
+              </div>
+            ) : (
+              <div className="border border-dashed border-slate-300 rounded-xl flex items-center justify-center bg-slate-50">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No Image Analytics</p>
+              </div>
+            )}
+          </div>
+
+          {/* Claims */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">Investigated Claims</h3>
+            <div className="space-y-4">
+              {data.verifiedClaims?.map((claim: any, idx: number) => {
+                const isTrue = claim.status === "VERIFIED TRUE";
+                const isPartial = claim.status === "PARTIALLY TRUE";
+                const colorClass = isTrue ? "text-emerald-900 bg-emerald-50 border-emerald-200" : isPartial ? "text-amber-900 bg-amber-50 border-amber-200" : "text-red-900 bg-red-50 border-red-200";
+
+                return (
+                  <div key={idx} className={`p-5 rounded-xl border ${colorClass}`}>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-sm ${isTrue ? 'bg-emerald-500 text-white' : isPartial ? 'bg-amber-500 text-white' : 'bg-red-500 text-white'}`}>
+                        {claim.status}
+                      </span>
+                      <span className="text-xs font-black uppercase tracking-widest opacity-60">{claim.confidence}% Certainty</span>
+                    </div>
+                    <p className="font-bold text-sm mb-3">"{claim.claim}"</p>
+                    <p className="text-xs opacity-80 mb-4 leading-relaxed font-medium">{claim.reasoning}</p>
+                    
+                    {claim.sources?.length > 0 && (
+                      <div className="pt-3 border-t border-black/10 flex flex-col gap-2">
+                        <span className="text-[9px] font-black uppercase tracking-widest opacity-50">Cited Sources</span>
+                        <div className="flex flex-wrap gap-2">
+                          {claim.sources.map((src: any, sIdx: number) => (
+                            <div key={sIdx} className="text-[9px] font-bold bg-white px-2.5 py-1 rounded shadow-sm border border-black/5 text-slate-700 max-w-[300px] truncate">
+                              {src.title || src.url}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="text-center pt-8 border-t border-slate-200 pb-4">
+            <span className="text-[9px] font-black tracking-[0.3em] uppercase opacity-30">Rendered via Agentic System</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
