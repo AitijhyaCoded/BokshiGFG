@@ -14,8 +14,19 @@ export default function Dashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [recentHistory, setRecentHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [stats, setStats] = useState({ totalCount: 0, hourCount: 0 });
 
   useEffect(() => {
+    // Fetch statistics
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setStats(data);
+        }
+      })
+      .catch(err => console.error('Stats fetch error:', err));
+
     fetch('/api/history?limit=3')
       .then(res => res.json())
       .then(data => {
@@ -162,8 +173,8 @@ export default function Dashboard() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#7dd3fc] bg-[#7dd3fc]/10 px-2 py-1 rounded-full">Live</span>
           </div>
           <div>
-            <p className="text-sm text-slate-400 mb-1">Verified This Hour</p>
-            <p className="text-4xl font-bold text-white tracking-tight">12,482</p>
+            <p className="text-sm text-slate-400 mb-1">Total Verifications</p>
+            <p className="text-4xl font-bold text-white tracking-tight">{stats.totalCount.toLocaleString()}</p>
           </div>
         </GlassCard>
 
@@ -171,7 +182,7 @@ export default function Dashboard() {
           <div className="relative z-10 w-2/3">
             <h3 className="text-xl font-semibold text-white mb-2">Advanced Deepfake Detection</h3>
             <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-              Our new neural model identifies synthetically generated text and images with 99.4% accuracy.
+              Our new neural model identifies synthetically generated text and images with high accuracy.
             </p>
             <a href="#" className="inline-flex items-center gap-2 text-sm font-medium text-[#7dd3fc] hover:text-white transition-colors">
               Read Research <ArrowRight className="w-4 h-4" />

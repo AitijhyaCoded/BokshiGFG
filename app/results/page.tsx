@@ -26,38 +26,47 @@ export default function ResultsPage() {
     }
   }, [router]);
 
+  const calculateOverlap = (s1: string, s2: string) => {
+    const words1 = new Set(s1.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2));
+    const words2 = new Set(s2.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2));
+    if (words1.size === 0 || words2.size === 0) return 0;
+    
+    const intersection = new Set([...words1].filter(x => words2.has(x)));
+    return intersection.size / Math.max(words1.size, words2.size);
+  };
+
   const highlightComponents = useMemo(() => {
     if (!data?.verifiedClaims) return {};
 
     return {
       p: ({ children }: any) => {
-        if (typeof children !== 'string') return <p className="mb-4 last:mb-0 leading-relaxed">{children}</p>;
+        // Handle both string and array of children (to support nested Markdown like bold text)
+        const childrenArray = Array.isArray(children) ? children : [children];
         
-        // Find and wrap claims in the text
-        let result: (string | JSX.Element)[] = [children];
-        
-        data.verifiedClaims.forEach((claim: any) => {
-          const newResult: (string | JSX.Element)[] = [];
-          
-          result.forEach((segment) => {
-            if (typeof segment !== 'string') {
-              newResult.push(segment);
-              return;
-            }
+        const processedChildren = childrenArray.flatMap((child, childIdx) => {
+          if (typeof child !== 'string') return child;
 
-            // Simple exact match for now. In production, consider fuzzy matching or sentence splitting
-            const claimText = claim.claim;
-            const index = segment.indexOf(claimText);
-            
-            if (index !== -1) {
-              const before = segment.substring(0, index);
-              const match = segment.substring(index, index + claimText.length);
-              const after = segment.substring(index + claimText.length);
-              
-              if (before) newResult.push(before);
-              
-              const isTrue = claim.status === "VERIFIED TRUE";
-              const isPartial = claim.status === "PARTIALLY TRUE";
+          // Split paragraph text into sentences
+          // This regex splits by sentence-ending punctuation followed by space or end of string
+          const sentences = child.match(/[^.!?]+[.!?]*\s*/g) || [child];
+          
+          return sentences.map((sentence, sentIdx) => {
+            // Find best matching claim for this sentence
+            let bestMatch: any = null;
+            let maxOverlap = 0;
+
+            data.verifiedClaims.forEach((claim: any) => {
+              const overlap = calculateOverlap(sentence, claim.claim);
+              // Threshold of 0.45 (45% word overlap) usually works well for paraphrased sentences
+              if (overlap > 0.45 && overlap > maxOverlap) {
+                maxOverlap = overlap;
+                bestMatch = claim;
+              }
+            });
+
+            if (bestMatch) {
+              const isTrue = bestMatch.status === "VERIFIED TRUE";
+              const isPartial = bestMatch.status === "PARTIALLY TRUE";
               
               const highlightClass = isTrue 
                 ? "bg-emerald-500/20 text-emerald-400 border-b-2 border-emerald-500/50" 
@@ -65,22 +74,17 @@ export default function ResultsPage() {
                   ? "bg-amber-500/20 text-amber-400 border-b-2 border-amber-500/50" 
                   : "bg-red-500/20 text-red-400 border-b-2 border-red-500/50";
 
-              newResult.push(
-                <span key={`${claim.claim}-${index}`} className={cn("px-1 py-0.5 rounded-sm transition-colors duration-300", highlightClass)}>
-                  {match}
+              return (
+                <span key={`${childIdx}-${sentIdx}`} className={cn("px-1 py-0.5 rounded-sm transition-colors duration-300", highlightClass)}>
+                  {sentence}
                 </span>
               );
-              
-              if (after) newResult.push(after);
-            } else {
-              newResult.push(segment);
             }
+            return sentence;
           });
-          
-          result = newResult;
         });
 
-        return <p className="mb-4 last:mb-0 leading-relaxed">{result}</p>;
+        return <p className="mb-4 last:mb-0 leading-relaxed">{processedChildren}</p>;
       }
     };
   }, [data?.verifiedClaims]);
