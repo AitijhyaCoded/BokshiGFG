@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server';
+import { db } from '@/lib/db';
+import { verifications } from '@/lib/schema';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { HumanMessage } from '@langchain/core/messages';
 import { TavilySearchAPIRetriever } from '@langchain/community/retrievers/tavily_search_api';
@@ -205,6 +207,23 @@ export async function POST(req: NextRequest) {
           };
 
           sendLog('VERIFICATION COMPLETE. FINALIZING PAYLOAD...');
+          sendLog('SAVING TO DATABASE...');
+          
+          try {
+            await db.insert(verifications).values({
+              originalText: String(originalContentToDisplay || '').replace(/\x00/g, ''),
+              accuracy: Math.round(Number(finalOutput.accuracy) || 0),
+              trueCount: Math.round(Number(finalOutput.trueCount) || 0),
+              partialCount: Math.round(Number(finalOutput.partialCount) || 0),
+              falseCount: Math.round(Number(finalOutput.falseCount) || 0),
+              aiReasoning: String(finalOutput.aiReasoning || '').replace(/\x00/g, ''),
+              verifiedClaims: finalOutput.verifiedClaims || [],
+            });
+            sendLog('SAVED TO NEON DB.');
+          } catch (e: any) {
+             console.error('DATABASE INSERT ERROR:', e);
+             sendLog(`ERROR SAVING TO DB: ${e.message}`);
+          }
 
           controller.enqueue(encoder.encode(JSON.stringify({ type: 'result', data: finalPayload }) + '\n'));
           controller.close();

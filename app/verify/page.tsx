@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, Search, FileText, X, Sparkles } from 'lucide-react';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -8,7 +8,7 @@ import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 
 const steps = [
-  { id: 1, title: 'Extracting Claims...', desc: 'Found 4 distinct claims in the provided text snippet.', icon: CheckCircle2 },
+  { id: 1, title: 'Extracting Claims...', desc: 'Found noticeable claims in the provided text snippet.', icon: CheckCircle2 },
   { id: 2, title: 'Searching the Web...', desc: 'Scanning academic journals and top-tier news outlets...', icon: Search },
   { id: 3, title: 'Verifying Evidence...', desc: 'Cross-referencing search results for inconsistencies.', icon: FileText },
 ];
@@ -26,6 +26,7 @@ export default function VerifyPage() {
 
   useEffect(() => {
     let isMounted = true;
+    const abortController = new AbortController();
 
     async function runVerification() {
       const mode = sessionStorage.getItem('verifyInputMode') || 'text';
@@ -50,7 +51,8 @@ export default function VerifyPage() {
         const res = await fetch('/api/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: abortController.signal
         });
         
         if (!res.body) throw new Error('No stream in response');
@@ -90,8 +92,9 @@ export default function VerifyPage() {
             }
           }
         }
-      } catch (error) {
-         setLogs(prev => [...prev, 'FATAL ERROR CHECKING STREAM']);
+      } catch (error: any) {
+         if (error.name === 'AbortError') return;
+         setLogs(prev => [...prev, 'FATAL ERROR CHECKING STREAM: ' + error.message]);
       }
     }
 
@@ -99,6 +102,7 @@ export default function VerifyPage() {
 
     return () => {
       isMounted = false;
+      abortController.abort();
     };
   }, [router]);
 
@@ -206,15 +210,15 @@ export default function VerifyPage() {
           </GlassCard>
 
           <GlassCard className="p-6 flex-1 flex flex-col">
-            {/*<div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4">
               <Sparkles className="w-4 h-4 text-[#c8a0f0]" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8a0f0]">System Insight</h3>
-            </div>*/}
-            <div className="mb-6">
+            </div>
+            {/* <div className="mb-6">
               <p className="text-white font-medium leading-relaxed">
                 "Initial scans show strong alignment with 2023 climate studies, but the '40% reduction' claim requires deeper secondary verification."
               </p>
-            </div>
+            </div> */}
             
             {/* Terminal Feed */}
             <div className="flex-1 bg-[#050810] rounded-xl p-4 font-mono text-[10px] text-slate-400 overflow-hidden relative border border-white/5">
@@ -247,11 +251,11 @@ export default function VerifyPage() {
       <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-6">
         <div className="flex items-center gap-3">
           <div className="flex -space-x-2">
-            <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-[8px] text-emerald-400">A</div>
-            <div className="w-6 h-6 rounded-full bg-blue-500/20 border border-blue-500/50 flex items-center justify-center text-[8px] text-blue-400">B</div>
-            <div className="w-6 h-6 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center text-[8px] text-slate-300">+12</div>
+            <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-[8px] text-emerald-400"></div>
+            <div className="w-6 h-6 rounded-full bg-blue-500/20 border border-blue-500/50 flex items-center justify-center text-[8px] text-blue-400"></div>
+            <div className="w-6 h-6 rounded-full bg-slate-800/80 border border-slate-600 flex items-center justify-center text-[8px] text-slate-300"></div>
           </div>
-          <span className="text-xs text-slate-500">Cross-referencing with 14 trusted databases</span>
+          <span className="text-xs text-slate-500">Searching the web...</span>
         </div>
         <button onClick={() => router.push('/')} className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors">
           <X className="w-4 h-4" /> Cancel Analysis

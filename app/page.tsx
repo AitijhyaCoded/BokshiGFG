@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Link as LinkIcon, FileText, CheckCircle2, BarChart3, ShieldAlert, ArrowRight, Bell, HelpCircle } from 'lucide-react';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -12,6 +12,21 @@ export default function Dashboard() {
   const router = useRouter();
   const [inputValue, setInputValue] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [recentHistory, setRecentHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/history?limit=3')
+      .then(res => res.json())
+      .then(data => {
+        setRecentHistory(Array.isArray(data) ? data : []);
+        setIsLoadingHistory(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setIsLoadingHistory(false);
+      });
+  }, []);
 
   const handleVerify = () => {
     if (inputValue.trim()) {
@@ -22,7 +37,7 @@ export default function Dashboard() {
       } catch {
         isUrl = false;
       }
-      
+
       sessionStorage.setItem('verifyInputMode', isUrl ? 'url' : 'text');
       sessionStorage.setItem('verifyInput', inputValue.trim());
       router.push('/verify');
@@ -64,10 +79,10 @@ export default function Dashboard() {
       <header className="flex items-center justify-between mb-16">
         <div className="relative w-96">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input 
+          <input
             suppressHydrationWarning
-            type="text" 
-            placeholder="Search insights..." 
+            type="text"
+            placeholder="Search insights..."
             className="w-full bg-[#0f1524]/60 backdrop-blur-md border border-[#7dd3fc]/10 rounded-full py-2.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-[#7dd3fc]/30 focus:shadow-[0_0_20px_rgba(125,211,252,0.1)] transition-all"
           />
         </div>
@@ -83,14 +98,14 @@ export default function Dashboard() {
 
       {/* Hero Section */}
       <div className="flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto w-full mb-16">
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-5xl md:text-6xl font-bold text-center mb-6 tracking-tight"
         >
           Truth in the age of <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7dd3fc] to-[#c8a0f0]">AI Illusion</span>.
         </motion.h1>
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -100,14 +115,14 @@ export default function Dashboard() {
         </motion.p>
 
         {/* Input Area */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="w-full"
         >
           <GlassCard elevated className="p-2 flex flex-col group focus-within:shadow-[0_0_40px_rgba(125,211,252,0.1)] focus-within:border-[#7dd3fc]/30 transition-all duration-500">
-            <textarea 
+            <textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Paste an Article or URL..."
@@ -121,12 +136,12 @@ export default function Dashboard() {
                 <Button variant="ghost" className="py-2 px-3 text-xs rounded-lg" onClick={() => fileInputRef.current?.click()}>
                   <FileText className="w-4 h-4" /> Upload Doc
                 </Button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileUpload} 
-                  className="hidden" 
-                  accept=".pdf,image/*" 
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept=".pdf,image/*"
                 />
               </div>
               <Button onClick={handleVerify} className="rounded-xl px-8 shadow-[0_0_20px_rgba(125,211,252,0.1)]">
@@ -165,7 +180,7 @@ export default function Dashboard() {
           {/* Decorative graphic */}
           <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-[#7dd3fc]/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="absolute right-6 top-1/2 -translate-y-1/2 w-32 h-32 border border-[#7dd3fc]/20 rounded-xl rotate-12 group-hover:rotate-0 transition-transform duration-700 ease-out flex items-center justify-center bg-[#0a0e1a]/50 backdrop-blur-sm">
-             <ShieldAlert className="w-12 h-12 text-[#7dd3fc]/50" />
+            <ShieldAlert className="w-12 h-12 text-[#7dd3fc]/50" />
           </div>
         </GlassCard>
       </div>
@@ -174,31 +189,65 @@ export default function Dashboard() {
       <div>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Recent Fact-Checks</h2>
-          <a href="#" className="text-sm font-medium text-[#7dd3fc] hover:text-white transition-colors">View All History</a>
+          <button onClick={() => router.push('/history')} className="text-sm font-medium text-[#7dd3fc] hover:text-white transition-colors">View All History</button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { status: 'DECEPTIVE', color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20', title: 'Claim: New legislation will mandate digital currencies for all local groce...', time: '2h ago', source: 'Refuted by 8 major sources' },
-            { status: 'VERIFIED', color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', title: 'Report: Scientists successfully test new fusion reactor efficiency recor...', time: '5h ago', source: 'Validated by peer-reviewed data' },
-            { status: 'INCONCLUSIVE', color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20', title: 'Viral Video: Alleged sighting of unidentified aerial phenomenon ov...', time: 'Yesterday', source: 'Awaiting secondary expert analysis' },
-          ].map((item, i) => (
-            <GlassCard key={i} className="p-5 hover:bg-[#0f1524]/80 transition-colors cursor-pointer group">
-              <div className="flex items-center justify-between mb-4">
-                <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border", item.color, item.bg, item.border)}>
-                  {item.status}
-                </span>
-                <span className="text-xs text-slate-500">{item.time}</span>
-              </div>
-              <h4 className="text-sm font-medium text-white mb-4 line-clamp-2 group-hover:text-[#7dd3fc] transition-colors">{item.title}</h4>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-[8px] text-slate-400 border border-white/10">SRC</div>
-                <span className="text-xs text-slate-400">{item.source}</span>
-              </div>
-            </GlassCard>
-          ))}
+          {isLoadingHistory ? (
+            <div className="col-span-3 py-8 text-center text-slate-500">Loading recent fact-checks...</div>
+          ) : recentHistory.length === 0 ? (
+            <div className="col-span-3 py-8 text-center text-slate-500">No recent fact-checks.</div>
+          ) : recentHistory.map((item, i) => {
+            const totalClaims = item.trueCount + item.partialCount + item.falseCount;
+            let status = 'INCONCLUSIVE';
+            let color = 'text-amber-400';
+            let bg = 'bg-amber-400/10';
+            let border = 'border-amber-400/20';
+
+            if (totalClaims > 0) {
+              if (item.falseCount > 0 && item.trueCount > 0) {
+                status = 'PARTIALLY TRUE';
+                color = 'text-amber-400';
+                bg = 'bg-amber-400/10';
+                border = 'border-amber-400/20';
+              } else if (item.falseCount > 0) {
+                status = 'DECEPTIVE';
+                color = 'text-red-400';
+                bg = 'bg-red-400/10';
+                border = 'border-red-400/20';
+              } else if (item.trueCount > item.partialCount) {
+                status = 'VERIFIED';
+                color = 'text-emerald-400';
+                bg = 'bg-emerald-400/10';
+                border = 'border-emerald-400/20';
+              } else {
+                status = 'PARTIALLY TRUE';
+                color = 'text-amber-400';
+                bg = 'bg-amber-400/10';
+                border = 'border-amber-400/20';
+              }
+            }
+
+            return (
+              <GlassCard key={item.id || i} className="p-5 hover:bg-[#0f1524]/80 transition-colors cursor-pointer group" onClick={() => router.push('/history')}>
+                <div className="flex items-center justify-between mb-4">
+                  <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border", color, bg, border)}>
+                    {status}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Unknown'}
+                  </span>
+                </div>
+                <h4 className="text-sm font-medium text-white mb-4 line-clamp-2 group-hover:text-[#7dd3fc] transition-colors">{item.originalText}</h4>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-[8px] font-bold text-emerald-400 border border-emerald-400/20">{Math.round(item.accuracy)}%</div>
+                  <span className="text-xs text-slate-400">AI Confidence</span>
+                </div>
+              </GlassCard>
+            );
+          })}
         </div>
       </div>
-      
+
       <footer className="mt-16 text-center text-xs text-slate-600 pb-8">
         &copy; 2026 Bokshi.com AI. Built for the integrity of information.
       </footer>
