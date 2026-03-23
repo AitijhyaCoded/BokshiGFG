@@ -255,11 +255,6 @@ ${imageAnalysisParser.getFormatInstructions()}`;
 
           const verifyParser = StructuredOutputParser.fromZodSchema(
             z.object({
-              accuracy: z.number().describe("Total accuracy percentage 0 to 100"),
-              trueCount: z.number().describe("Number of verified true claims"),
-              partialCount: z.number().describe("Number of partially true claims"),
-              falseCount: z.number().describe("Number of verified false claims"),
-              unverifiableCount: z.number().describe("Number of unverifiable claims"),
               aiReasoning: z.string().describe("AI's reasoning regarding the bias or general certainty of the source"),
               verifiedClaims: z.array(z.object({
                 claim: z.string().describe("The original claim"),
@@ -280,7 +275,6 @@ ${imageAnalysisParser.getFormatInstructions()}`;
   If there is completely insufficient evidence or no sources supporting or refuting the claim, grade it as UNVERIFIABLE.
   Give it a confidence score mapping to your certainty level (0 to 100).
   Provide reasoning and strictly cite sources using the titles and urls provided in the context. If no sources support the claim, or if no context exists, explicitly state lack of evidence.
-  Calculate the overall accuracy based on the findings.
   Provide general AI reasoning on the tone or potential bias.
 
   {format_instructions}
@@ -304,9 +298,25 @@ ${imageAnalysisParser.getFormatInstructions()}`;
             format_instructions: verifyParser.getFormatInstructions()
           });
 
+          // Programmatically calculate counts and accuracy to prevent AI hallucinations
+          const verifiedClaimsList = finalOutput.verifiedClaims || [];
+          const trueCount = verifiedClaimsList.filter((c: any) => c.status === "VERIFIED TRUE").length;
+          const partialCount = verifiedClaimsList.filter((c: any) => c.status === "PARTIALLY TRUE").length;
+          const falseCount = verifiedClaimsList.filter((c: any) => c.status === "VERIFIED FALSE").length;
+          const unverifiableCount = verifiedClaimsList.filter((c: any) => c.status === "UNVERIFIABLE").length;
+          const totalClaims = verifiedClaimsList.length;
+
+          // Accuracy Calculation: (True * 100 + Partial * 50 + Unverifiable * 0 + False * 0) / Total
+          const accuracy = totalClaims > 0 ? Math.round(((trueCount * 100) + (partialCount * 50)) / totalClaims) : 0;
+
           // Embed original text in the payload for the results page
           const finalPayload = {
             ...finalOutput,
+            accuracy,
+            trueCount,
+            partialCount,
+            falseCount,
+            unverifiableCount,
             originalText: originalContentToDisplay,
             images: images,
             aiDetection: aiDetectionResult,
@@ -319,11 +329,11 @@ ${imageAnalysisParser.getFormatInstructions()}`;
           try {
             await db.insert(verifications).values({
               originalText: String(originalContentToDisplay || '').replace(/\x00/g, ''),
-              accuracy: Math.round(Number(finalOutput.accuracy) || 0),
-              trueCount: Math.round(Number(finalOutput.trueCount) || 0),
-              partialCount: Math.round(Number(finalOutput.partialCount) || 0),
-              falseCount: Math.round(Number(finalOutput.falseCount) || 0),
-              unverifiableCount: Math.round(Number(finalOutput.unverifiableCount) || 0),
+              accuracy: accuracy,
+              trueCount: trueCount,
+              partialCount: partialCount,
+              falseCount: falseCount,
+              unverifiableCount: unverifiableCount,
               aiReasoning: String(finalOutput.aiReasoning || '').replace(/\x00/g, ''),
               verifiedClaims: finalOutput.verifiedClaims || [],
             });
