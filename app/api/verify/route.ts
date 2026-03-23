@@ -259,10 +259,11 @@ ${imageAnalysisParser.getFormatInstructions()}`;
               trueCount: z.number().describe("Number of verified true claims"),
               partialCount: z.number().describe("Number of partially true claims"),
               falseCount: z.number().describe("Number of verified false claims"),
+              unverifiableCount: z.number().describe("Number of unverifiable claims"),
               aiReasoning: z.string().describe("AI's reasoning regarding the bias or general certainty of the source"),
               verifiedClaims: z.array(z.object({
                 claim: z.string().describe("The original claim"),
-                status: z.enum(["VERIFIED TRUE", "PARTIALLY TRUE", "VERIFIED FALSE"]),
+                status: z.enum(["VERIFIED TRUE", "PARTIALLY TRUE", "VERIFIED FALSE", "UNVERIFIABLE"]),
                 confidence: z.number().describe("Confidence score 0 to 100"),
                 reasoning: z.string().describe("Why the claim is graded this way"),
                 sources: z.array(z.object({
@@ -275,7 +276,8 @@ ${imageAnalysisParser.getFormatInstructions()}`;
 
           const verifyPrompt = PromptTemplate.fromTemplate(
             `You are a verification assistant. I will provide a list of claims and corresponding search results for each claim.
-  Grade each claim based STRICTLY on the search contexts provided as VERIFIED TRUE, PARTIALLY TRUE, or VERIFIED FALSE.
+  Grade each claim based STRICTLY on the search contexts provided as VERIFIED TRUE, PARTIALLY TRUE, VERIFIED FALSE, or UNVERIFIABLE.
+  If there is completely insufficient evidence or no sources supporting or refuting the claim, grade it as UNVERIFIABLE.
   Give it a confidence score mapping to your certainty level (0 to 100).
   Provide reasoning and strictly cite sources using the titles and urls provided in the context. If no sources support the claim, or if no context exists, explicitly state lack of evidence.
   Calculate the overall accuracy based on the findings.
@@ -321,6 +323,7 @@ ${imageAnalysisParser.getFormatInstructions()}`;
               trueCount: Math.round(Number(finalOutput.trueCount) || 0),
               partialCount: Math.round(Number(finalOutput.partialCount) || 0),
               falseCount: Math.round(Number(finalOutput.falseCount) || 0),
+              unverifiableCount: Math.round(Number(finalOutput.unverifiableCount) || 0),
               aiReasoning: String(finalOutput.aiReasoning || '').replace(/\x00/g, ''),
               verifiedClaims: finalOutput.verifiedClaims || [],
             });

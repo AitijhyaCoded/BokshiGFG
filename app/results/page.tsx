@@ -101,12 +101,15 @@ export default function ResultsPage() {
             if (bestMatch) {
               const isTrue = bestMatch.status === "VERIFIED TRUE";
               const isPartial = bestMatch.status === "PARTIALLY TRUE";
+              const isUnverifiable = bestMatch.status === "UNVERIFIABLE";
               
               const highlightClass = isTrue 
                 ? "bg-emerald-500/20 text-emerald-400 border-b-2 border-emerald-500/50" 
                 : isPartial 
                   ? "bg-amber-500/20 text-amber-400 border-b-2 border-amber-500/50" 
-                  : "bg-red-500/20 text-red-400 border-b-2 border-red-500/50";
+                  : isUnverifiable
+                    ? "bg-slate-500/20 text-slate-400 border-b-2 border-slate-500/50"
+                    : "bg-red-500/20 text-red-400 border-b-2 border-red-500/50";
 
               return (
                 <span key={`${childIdx}-${sentIdx}`} className={cn("px-1 py-0.5 rounded-sm transition-colors duration-300", highlightClass)}>
@@ -212,6 +215,7 @@ export default function ResultsPage() {
               <span className="text-emerald-400 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {data.trueCount} Verified</span>
               <span className="text-amber-400 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-amber-400" /> {data.partialCount} Mixed</span>
               <span className="text-red-400 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-red-400" /> {data.falseCount} Disproven</span>
+              {data.unverifiableCount > 0 && <span className="text-slate-400 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-slate-400" /> {data.unverifiableCount} Unverifiable</span>}
             </div>
           </div>
 
@@ -260,17 +264,20 @@ export default function ResultsPage() {
               {data.verifiedClaims?.map((claim: any, idx: number) => {
                 const isTrue = claim.status === "VERIFIED TRUE";
                 const isPartial = claim.status === "PARTIALLY TRUE";
+                const isUnverifiable = claim.status === "UNVERIFIABLE";
                 const isFalse = claim.status === "VERIFIED FALSE";
 
-                const colorClass = isTrue ? "text-emerald-400" : isPartial ? "text-amber-400" : "text-red-400";
-                const borderClass = isTrue ? "border-emerald-500/20" : isPartial ? "border-amber-500/20" : "border-red-500/20";
-                const bgClass = isTrue ? "bg-emerald-500/10" : isPartial ? "bg-amber-500/10" : "bg-red-500/10";
+                const colorClass = isTrue ? "text-emerald-400" : isPartial ? "text-amber-400" : isUnverifiable ? "text-slate-400" : "text-red-400";
+                const borderClass = isTrue ? "border-emerald-500/20" : isPartial ? "border-amber-500/20" : isUnverifiable ? "border-slate-500/20" : "border-red-500/20";
+                const bgClass = isTrue ? "bg-emerald-500/10" : isPartial ? "bg-amber-500/10" : isUnverifiable ? "bg-slate-500/10" : "bg-red-500/10";
                 
                 const highlightClass = isTrue 
                   ? "bg-gradient-to-r from-emerald-500/10 to-green-500/10 text-white" 
                   : isPartial 
                     ? "bg-gradient-to-r from-amber-500/10 to-yellow-500/10 text-white" 
-                    : "bg-gradient-to-r from-red-500/10 to-pink-500/10 text-white";
+                    : isUnverifiable
+                      ? "bg-gradient-to-r from-slate-500/10 to-gray-500/10 text-white"
+                      : "bg-gradient-to-r from-red-500/10 to-pink-500/10 text-white";
 
                 return (
                   <motion.div 
@@ -279,7 +286,7 @@ export default function ResultsPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.05 * idx }}
                   >
-                    <GlassCard className={cn("p-5 border-l-2", isTrue ? "border-l-emerald-500" : isPartial ? "border-l-amber-500" : "border-l-red-500")}>
+                    <GlassCard className={cn("p-5 border-l-2", isTrue ? "border-l-emerald-500" : isPartial ? "border-l-amber-500" : isUnverifiable ? "border-l-slate-500" : "border-l-red-500")}>
                       <div className="flex items-center justify-between mb-3">
                         <span className={cn("text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border", colorClass, borderClass, bgClass)}>
                           {claim.status}
@@ -482,7 +489,14 @@ export default function ResultsPage() {
                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Supporting Media</h4>
                 <div className="grid grid-cols-2 gap-4">
                   {data.images.map((img: string, idx: number) => (
-                    <img key={idx} src={img} className="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm" alt="Supporting media" crossOrigin="anonymous" />
+                    img.startsWith('data:') ? (
+                      <img key={idx} src={img} className="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm" alt="Supporting media" />
+                    ) : (
+                      <div key={idx} className="w-full h-48 rounded-xl border border-slate-200 bg-slate-100 flex flex-col items-center justify-center p-4 text-center shadow-sm">
+                        <ImageIcon className="w-6 h-6 text-slate-300 mb-2" />
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">External Media Omitted<br/>(View in Web)</span>
+                      </div>
+                    )
                   ))}
                 </div>
               </div>
@@ -521,12 +535,13 @@ export default function ResultsPage() {
               {data.verifiedClaims?.map((claim: any, idx: number) => {
                 const isTrue = claim.status === "VERIFIED TRUE";
                 const isPartial = claim.status === "PARTIALLY TRUE";
-                const colorClass = isTrue ? "text-emerald-900 bg-emerald-50 border-emerald-200" : isPartial ? "text-amber-900 bg-amber-50 border-amber-200" : "text-red-900 bg-red-50 border-red-200";
+                const isUnverifiable = claim.status === "UNVERIFIABLE";
+                const colorClass = isTrue ? "text-emerald-900 bg-emerald-50 border-emerald-200" : isPartial ? "text-amber-900 bg-amber-50 border-amber-200" : isUnverifiable ? "text-slate-900 bg-slate-50 border-slate-200" : "text-red-900 bg-red-50 border-red-200";
 
                 return (
                   <div key={idx} className={`p-5 rounded-xl border ${colorClass}`}>
                     <div className="flex justify-between items-center mb-3">
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-sm ${isTrue ? 'bg-emerald-500 text-white' : isPartial ? 'bg-amber-500 text-white' : 'bg-red-500 text-white'}`}>
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-sm ${isTrue ? 'bg-emerald-500 text-white' : isPartial ? 'bg-amber-500 text-white' : isUnverifiable ? 'bg-slate-500 text-white' : 'bg-red-500 text-white'}`}>
                         {claim.status}
                       </span>
                       <span className="text-xs font-black uppercase tracking-widest opacity-60">{claim.confidence}% Certainty</span>

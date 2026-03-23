@@ -208,34 +208,28 @@ export default function Dashboard() {
           ) : recentHistory.length === 0 ? (
             <div className="col-span-3 py-8 text-center text-slate-500">No recent fact-checks.</div>
           ) : recentHistory.map((item, i) => {
-            const totalClaims = item.trueCount + item.partialCount + item.falseCount;
+            const totalClaims = item.trueCount + item.partialCount + item.falseCount + (item.unverifiableCount || 0);
+            const acc = item.accuracy || 0;
             let status = 'INCONCLUSIVE';
             let color = 'text-amber-400';
             let bg = 'bg-amber-400/10';
             let border = 'border-amber-400/20';
 
-            if (totalClaims > 0) {
-              if (item.falseCount > 0 && item.trueCount > 0) {
-                status = 'PARTIALLY TRUE';
-                color = 'text-amber-400';
-                bg = 'bg-amber-400/10';
-                border = 'border-amber-400/20';
-              } else if (item.falseCount > 0) {
-                status = 'DECEPTIVE';
-                color = 'text-red-400';
-                bg = 'bg-red-400/10';
-                border = 'border-red-400/20';
-              } else if (item.trueCount > item.partialCount) {
-                status = 'VERIFIED';
-                color = 'text-emerald-400';
-                bg = 'bg-emerald-400/10';
-                border = 'border-emerald-400/20';
-              } else {
-                status = 'PARTIALLY TRUE';
-                color = 'text-amber-400';
-                bg = 'bg-amber-400/10';
-                border = 'border-amber-400/20';
-              }
+            if (acc >= 80) {
+              status = 'HIGHLY RELIABLE';
+              color = 'text-emerald-400';
+              bg = 'bg-emerald-500/10';
+              border = 'border-emerald-500/20';
+            } else if (acc >= 50) {
+              status = 'MIXED SIGNALS';
+              color = 'text-amber-400';
+              bg = 'bg-amber-500/10';
+              border = 'border-amber-500/20';
+            } else {
+              status = 'POTENTIALLY DECEPTIVE';
+              color = 'text-red-400';
+              bg = 'bg-red-500/10';
+              border = 'border-red-500/20';
             }
 
             return (

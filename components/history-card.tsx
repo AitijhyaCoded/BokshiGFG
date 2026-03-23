@@ -14,34 +14,28 @@ interface HistoryCardProps {
 export function HistoryCard({ record }: HistoryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const totalClaims = record.trueCount + record.partialCount + record.falseCount;
+  const totalClaims = record.trueCount + record.partialCount + record.falseCount + (record.unverifiableCount || 0);
+  const acc = record.accuracy || 0;
   let status = 'INCONCLUSIVE';
   let color = 'text-amber-400';
   let bg = 'bg-amber-400/10';
   let border = 'border-amber-400/20';
 
-  if (totalClaims > 0) {
-    if (record.falseCount > 0 && record.trueCount > 0) {
-      status = 'PARTIALLY TRUE';
-      color = 'text-amber-400';
-      bg = 'bg-amber-400/10';
-      border = 'border-amber-400/20';
-    } else if (record.falseCount > 0) {
-      status = 'DECEPTIVE';
-      color = 'text-red-400';
-      bg = 'bg-red-400/10';
-      border = 'border-red-400/20';
-    } else if (record.trueCount > record.partialCount) {
-      status = 'VERIFIED';
-      color = 'text-emerald-400';
-      bg = 'bg-emerald-400/10';
-      border = 'border-emerald-400/20';
-    } else {
-      status = 'PARTIALLY TRUE';
-      color = 'text-amber-400';
-      bg = 'bg-amber-400/10';
-      border = 'border-amber-400/20';
-    }
+  if (acc >= 80) {
+    status = 'HIGHLY RELIABLE';
+    color = 'text-emerald-400';
+    bg = 'bg-emerald-500/10';
+    border = 'border-emerald-500/20';
+  } else if (acc >= 50) {
+    status = 'MIXED SIGNALS';
+    color = 'text-amber-400';
+    bg = 'bg-amber-500/10';
+    border = 'border-amber-500/20';
+  } else {
+    status = 'POTENTIALLY DECEPTIVE';
+    color = 'text-red-400';
+    bg = 'bg-red-500/10';
+    border = 'border-red-500/20';
   }
 
   return (
@@ -105,7 +99,8 @@ export function HistoryCard({ record }: HistoryCardProps) {
                           "font-bold uppercase tracking-wider",
                           vc.status === 'VERIFIED TRUE' ? 'text-emerald-400' :
                             vc.status === 'VERIFIED FALSE' ? 'text-red-400' :
-                              'text-amber-400'
+                              vc.status === 'UNVERIFIABLE' ? 'text-slate-400' :
+                                'text-amber-400'
                         )}>{vc.status} ({vc.confidence}%)</span>
                       </div>
                       <p className="text-xs text-slate-400">{vc.reasoning}</p>
