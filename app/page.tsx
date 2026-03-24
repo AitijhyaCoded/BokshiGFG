@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Link as LinkIcon, FileText, CheckCircle2, BarChart3, ShieldAlert, ArrowRight, Bell, HelpCircle, ScanEye, Zap, Database, Lock } from 'lucide-react';
+import { Search, Link as LinkIcon, FileText, CheckCircle2, BarChart3, ShieldAlert, ArrowRight, Bell, HelpCircle, ScanEye, Zap, Database, Lock, Mic } from 'lucide-react';
 import { GlassCard } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
 import { motion } from 'motion/react';
@@ -15,6 +15,46 @@ export default function LandingPage() {
   const [recentHistory, setRecentHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [stats, setStats] = useState({ totalCount: 0, hourCount: 0 });
+
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInputValue(prev => prev ? prev + ' ' + transcript : transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error(event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
 
   useEffect(() => {
     fetch('/api/stats')
@@ -170,7 +210,10 @@ export default function LandingPage() {
                     <Button variant="ghost" className="py-2.5 px-4 text-sm font-medium rounded-xl hover:bg-white/10 transition-colors" onClick={() => fileInputRef.current?.click()}>
                       <FileText className="w-4 h-4 mr-2" /> Document
                     </Button>
-                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,image/*" />
+                    <Button variant="ghost" className={`py-2.5 px-4 text-sm font-medium rounded-xl transition-colors ${isListening ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'hover:bg-white/10'}`} onClick={toggleListening}>
+                      <Mic className={`w-4 h-4 mr-2 ${isListening ? 'animate-pulse' : ''}`} /> {isListening ? 'Listening...' : 'Voice'}
+                    </Button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,image/*,.mp3,.wav,.m4a,audio/*" />
                   </div>
                   <Button 
                     onClick={handleVerify} 
