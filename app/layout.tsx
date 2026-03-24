@@ -1,10 +1,10 @@
 import type {Metadata} from 'next';
-import { Epilogue } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css'; // Global styles
 import { SidebarProvider } from '@/hooks/use-sidebar';
 import { Sidebar } from '@/components/sidebar';
 
-const epilogue = Epilogue({ subsets: ['latin'], variable: '--font-epilogue' });
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta' });
 
 export const metadata: Metadata = {
   title: 'Bokshi | AI Verification',
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en" className={`${epilogue.variable} font-sans`}>
+    <html lang="en" className={`${jakarta.variable} font-sans`}>
       <body className="bg-[#0a0e1a] text-slate-200 antialiased selection:bg-[#7dd3fc]/30 selection:text-white flex h-screen overflow-hidden" suppressHydrationWarning>
         <SidebarProvider>
           <div className="flex w-full h-full overflow-hidden">

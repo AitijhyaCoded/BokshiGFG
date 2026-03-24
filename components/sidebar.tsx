@@ -26,8 +26,8 @@ export function Sidebar() {
     >
       {/* Logo Area */}
       <div className={clsx("p-6 flex items-center transition-all duration-300", isCollapsed ? "justify-center px-0" : "gap-3")}>
-        <div className="w-10 h-10 rounded-xl bg-[#7dd3fc]/10 flex items-center justify-center border border-[#7dd3fc]/20 shadow-[0_0_15px_rgba(125,211,252,0.1)] shrink-0">
-          <ShieldCheck className="w-6 h-6 text-[#7dd3fc]" />
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7dd3fc] to-[#c8a0f0] flex items-center justify-center shadow-[0_0_20px_rgba(125,211,252,0.3)] shrink-0">
+          <ShieldCheck className="w-5 h-5 text-[#030712]" />
         </div>
         <AnimatePresence mode="wait">
           {!isCollapsed && (
@@ -38,8 +38,9 @@ export function Sidebar() {
               transition={{ duration: 0.2 }}
               className="flex-1 overflow-hidden"
             >
-              <h1 className="text-xl font-semibold text-white tracking-tight truncate">Bokshi.com</h1>
-              <p className="text-[10px] uppercase tracking-wider text-slate-500 font-medium truncate">AI Verification</p>
+              <h1 className="text-xl font-bold tracking-tight text-white truncate">
+                Bokshi.<span className="text-[#7dd3fc]">AI</span>
+              </h1>
             </motion.div>
           )}
         </AnimatePresence>
