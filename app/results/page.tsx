@@ -21,23 +21,23 @@ export default function ResultsPage() {
   const generatePDF = async () => {
     if (!reportRef.current || !data) return;
     setIsGeneratingPDF(true);
-    
+
     try {
       const element = reportRef.current;
       const imgData = await toPng(element, {
         pixelRatio: 2,
         backgroundColor: '#ffffff',
       });
-      
+
       const width = element.offsetWidth;
       const height = element.offsetHeight;
-      
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'px',
         format: [width, height]
       });
-      
+
       pdf.addImage(imgData, 'PNG', 0, 0, width, height);
       pdf.save('Bokshi_Verification_Report.pdf');
     } catch (error) {
@@ -64,7 +64,7 @@ export default function ResultsPage() {
     const words1 = new Set(s1.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2));
     const words2 = new Set(s2.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2));
     if (words1.size === 0 || words2.size === 0) return 0;
-    
+
     const intersection = new Set([...words1].filter(x => words2.has(x)));
     return intersection.size / Math.max(words1.size, words2.size);
   };
@@ -76,14 +76,14 @@ export default function ResultsPage() {
       p: ({ children }: any) => {
         // Handle both string and array of children (to support nested Markdown like bold text)
         const childrenArray = Array.isArray(children) ? children : [children];
-        
+
         const processedChildren = childrenArray.flatMap((child, childIdx) => {
           if (typeof child !== 'string') return child;
 
           // Split paragraph text into sentences
           // This regex splits by sentence-ending punctuation followed by space or end of string
           const sentences = child.match(/[^.!?]+[.!?]*\s*/g) || [child];
-          
+
           return sentences.map((sentence, sentIdx) => {
             // Find best matching claim for this sentence
             let bestMatch: any = null;
@@ -102,11 +102,11 @@ export default function ResultsPage() {
               const isTrue = bestMatch.status === "VERIFIED TRUE";
               const isPartial = bestMatch.status === "PARTIALLY TRUE";
               const isUnverifiable = bestMatch.status === "UNVERIFIABLE";
-              
-              const highlightClass = isTrue 
-                ? "bg-emerald-500/20 text-emerald-400 border-b-2 border-emerald-500/50" 
-                : isPartial 
-                  ? "bg-amber-500/20 text-amber-400 border-b-2 border-amber-500/50" 
+
+              const highlightClass = isTrue
+                ? "bg-emerald-500/20 text-emerald-400 border-b-2 border-emerald-500/50"
+                : isPartial
+                  ? "bg-amber-500/20 text-amber-400 border-b-2 border-amber-500/50"
                   : isUnverifiable
                     ? "bg-slate-500/20 text-slate-400 border-b-2 border-slate-500/50"
                     : "bg-red-500/20 text-red-400 border-b-2 border-red-500/50";
@@ -134,6 +134,16 @@ export default function ResultsPage() {
   );
 
   const getVerdict = () => {
+    if (data.isUnverifiableMajority) {
+      return { 
+        label: "UNVERIFIABLE", 
+        color: "text-slate-400", 
+        bg: "bg-slate-500/10", 
+        border: "border-slate-500/20", 
+        icon: Shield, 
+        glow: "shadow-none" 
+      };
+    }
     const acc = data.accuracy || 0;
     if (acc >= 80) return { label: "HIGHLY RELIABLE", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20", icon: ShieldCheck, glow: "shadow-[0_0_30px_rgba(16,185,129,0.2)]" };
     if (acc >= 50) return { label: "MIXED SIGNALS", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", icon: Shield, glow: "shadow-[0_0_30px_rgba(245,158,11,0.2)]" };
@@ -145,7 +155,7 @@ export default function ResultsPage() {
   return (
     <div className="min-h-full p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8 pb-24">
       {/* Top Banner / Verdict */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col md:flex-row items-center justify-between gap-6"
@@ -158,37 +168,44 @@ export default function ResultsPage() {
               <h2 className="text-xl font-bold">{verdict.label}</h2>
             </div>
           </div>
-          
+
           <div className="h-12 w-px bg-white/10 hidden md:block" />
-          
+
           <div className="flex items-center gap-4">
             <div className="relative w-16 h-16">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                 <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                <motion.circle 
-                  cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="3" 
+                <motion.circle
+                  cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="3"
                   strokeDasharray="100, 100"
                   initial={{ strokeDashoffset: 100 }}
-                  animate={{ strokeDashoffset: 100 - data.accuracy }}
-                  className={verdict.color}
+                  animate={{ strokeDashoffset: data.isUnverifiableMajority ? 100 : 100 - data.accuracy }}
+                  className={cn(verdict.color, data.isUnverifiableMajority && "text-slate-700")}
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-white">{data.accuracy}%</span>
+                <span className={cn("text-sm font-bold", data.isUnverifiableMajority ? "text-slate-500" : "text-white")}>
+                  {data.isUnverifiableMajority ? "N/A" : `${data.accuracy}%`}
+                </span>
               </div>
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Accuracy Score</p>
-              <p className="text-xs text-slate-400">Based on {data.verifiedClaims?.length} verified claims</p>
+              <p className="text-xs text-slate-400">
+                {data.isUnverifiableMajority 
+                  ? "Majority subjective content" 
+                  : `Based on ${data.trueCount + data.partialCount + data.falseCount} verifiable claims`
+                }
+              </p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button 
+          <Button
             onClick={generatePDF}
             disabled={isGeneratingPDF}
-            variant="secondary" 
+            variant="secondary"
             className="rounded-xl bg-white/5 border-white/10 hover:bg-white/10"
           >
             {isGeneratingPDF ? (
@@ -223,22 +240,22 @@ export default function ResultsPage() {
             <div className="prose prose-invert prose-sm max-w-none prose-headings:text-[#7dd3fc] prose-a:text-[#7dd3fc] prose-strong:text-white">
               <ReactMarkdown components={highlightComponents}>{data.originalText}</ReactMarkdown>
             </div>
-            
+
             {data.images && data.images.length > 0 && (
               <div className="mt-12">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                   Supporting Media
+                  Supporting Media
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {data.images.map((img: string, idx: number) => (
-                    <motion.div 
-                      key={idx} 
+                    <motion.div
+                      key={idx}
                       whileHover={{ scale: 1.02 }}
                       className="group relative rounded-2xl overflow-hidden border border-white/10 aspect-video bg-[#0a0e1a] flex items-center justify-center cursor-pointer shadow-xl"
                     >
-                      <img 
-                        src={img} 
-                        alt={`Supporting visual ${idx + 1}`} 
+                      <img
+                        src={img}
+                        alt={`Supporting visual ${idx + 1}`}
                         className="object-contain w-full h-full p-2 group-hover:scale-105 transition-transform duration-500"
                       />
                     </motion.div>
@@ -270,17 +287,17 @@ export default function ResultsPage() {
                 const colorClass = isTrue ? "text-emerald-400" : isPartial ? "text-amber-400" : isUnverifiable ? "text-slate-400" : "text-red-400";
                 const borderClass = isTrue ? "border-emerald-500/20" : isPartial ? "border-amber-500/20" : isUnverifiable ? "border-slate-500/20" : "border-red-500/20";
                 const bgClass = isTrue ? "bg-emerald-500/10" : isPartial ? "bg-amber-500/10" : isUnverifiable ? "bg-slate-500/10" : "bg-red-500/10";
-                
-                const highlightClass = isTrue 
-                  ? "bg-gradient-to-r from-emerald-500/10 to-green-500/10 text-white" 
-                  : isPartial 
-                    ? "bg-gradient-to-r from-amber-500/10 to-yellow-500/10 text-white" 
+
+                const highlightClass = isTrue
+                  ? "bg-gradient-to-r from-emerald-500/10 to-green-500/10 text-white"
+                  : isPartial
+                    ? "bg-gradient-to-r from-amber-500/10 to-yellow-500/10 text-white"
                     : isUnverifiable
                       ? "bg-gradient-to-r from-slate-500/10 to-gray-500/10 text-white"
                       : "bg-gradient-to-r from-red-500/10 to-pink-500/10 text-white";
 
                 return (
-                  <motion.div 
+                  <motion.div
                     key={idx}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -296,7 +313,7 @@ export default function ResultsPage() {
                           <span className="text-[8px] uppercase tracking-tighter text-slate-500 font-bold">Certainty</span>
                         </div>
                       </div>
-                      
+
                       <div className={cn("p-4 rounded-xl mb-4 shadow-sm", highlightClass)}>
                         <p className="text-sm font-semibold leading-relaxed">
                           "{claim.claim}"
@@ -307,14 +324,14 @@ export default function ResultsPage() {
                         <p className="text-[10px] text-slate-300 leading-relaxed italic">
                           {claim.reasoning}
                         </p>
-                        
+
                         <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
                           {claim.sources?.map((src: any, sIdx: number) => (
-                            <a 
-                              key={sIdx} 
-                              href={src.url} 
-                              target="_blank" 
-                              rel="noreferrer" 
+                            <a
+                              key={sIdx}
+                              href={src.url}
+                              target="_blank"
+                              rel="noreferrer"
                               className="inline-flex items-center gap-1.5 text-[8px] font-bold text-slate-400 hover:text-white bg-white/5 px-2 py-1 rounded-md border border-white/5 transition-colors"
                             >
                               <LinkIcon className="w-2.5 h-2.5" />
@@ -334,7 +351,7 @@ export default function ResultsPage() {
         {/* Right Column: Insights & Forensics */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           {/* Forensics Card */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
@@ -347,13 +364,13 @@ export default function ResultsPage() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-[#7dd3fc]">Forensics</h3>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-6">
                 <div className="relative w-20 h-20">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                    <motion.circle 
-                      cx="18" cy="18" r="16" fill="none" stroke="#7dd3fc" strokeWidth="3" 
+                    <motion.circle
+                      cx="18" cy="18" r="16" fill="none" stroke="#7dd3fc" strokeWidth="3"
                       strokeDasharray="100, 100"
                       initial={{ strokeDashoffset: 100 }}
                       animate={{ strokeDashoffset: 100 - (data.aiDetection?.probability || 0) }}
@@ -375,7 +392,7 @@ export default function ResultsPage() {
           </motion.div>
 
           {/* AI Insight Card */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
@@ -393,7 +410,7 @@ export default function ResultsPage() {
           </motion.div>
 
           {/* Image Insight Card */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.45 }}
@@ -404,25 +421,25 @@ export default function ResultsPage() {
                 <ImageIcon className="w-4 h-4 text-[#f472b6]" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[#f472b6]">Image Insights</h3>
               </div>
-              
+
               {data.images && data.images.length > 0 ? (
                 data.imageAnalysis ? (
                   <div className="space-y-4 relative z-10">
                     <div className="flex items-center gap-4">
                       <div className="relative w-16 h-16 shrink-0">
-                          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                            <motion.circle 
-                              cx="18" cy="18" r="16" fill="none" stroke="#f472b6" strokeWidth="3" 
-                              strokeDasharray="100, 100"
-                              initial={{ strokeDashoffset: 100 }}
-                              animate={{ strokeDashoffset: 100 - data.imageAnalysis.aiProbability }}
-                              transition={{ duration: 1, ease: "easeOut" }}
-                            />
-                          </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-[10px] font-bold text-white">{data.imageAnalysis.aiProbability}%</span>
-                          </div>
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                          <motion.circle
+                            cx="18" cy="18" r="16" fill="none" stroke="#f472b6" strokeWidth="3"
+                            strokeDasharray="100, 100"
+                            initial={{ strokeDashoffset: 100 }}
+                            animate={{ strokeDashoffset: 100 - data.imageAnalysis.aiProbability }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-[10px] font-bold text-white">{data.imageAnalysis.aiProbability}%</span>
+                        </div>
                       </div>
                       <div>
                         <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">AI Gen Prob.</p>
@@ -448,7 +465,7 @@ export default function ResultsPage() {
           </motion.div>
         </div>
       </div>
-      
+
       {/* Footer Branding */}
       <footer className="mt-12 flex items-center justify-center gap-12 pt-12 border-t border-white/5 text-[10px] uppercase tracking-[0.3em] font-black text-slate-800">
         <span>Bokshi Fact Engine v1.2</span>
@@ -467,12 +484,23 @@ export default function ResultsPage() {
             </div>
             <div className="text-right">
               <p className="text-[10px] font-black uppercase tracking-widest text-[#0ea5e9]">Accuracy Score</p>
-              <p className="text-4xl font-black text-[#0ea5e9] -mt-1">{data.accuracy}%</p>
+              <p className={cn("text-4xl font-black -mt-1", data.isUnverifiableMajority ? "text-slate-300" : "text-[#0ea5e9]")}>
+                {data.isUnverifiableMajority ? "N/A" : `${data.accuracy}%`}
+              </p>
             </div>
           </div>
 
           {/* Verdict Segment */}
-          <div className={`p-6 rounded-xl border ${verdict.label === 'HIGHLY RELIABLE' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : verdict.label === 'MIXED SIGNALS' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-red-50 border-red-200 text-red-900'}`}>
+          <div className={cn(
+            "p-6 rounded-xl border",
+            data.isUnverifiableMajority 
+              ? "bg-slate-50 border-slate-200 text-slate-600" 
+              : verdict.label === 'HIGHLY RELIABLE' 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+                : verdict.label === 'MIXED SIGNALS' 
+                  ? 'bg-amber-50 border-amber-200 text-amber-900' 
+                  : 'bg-red-50 border-red-200 text-red-900'
+          )}>
             <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Final Verdict</p>
             <h2 className="text-2xl font-black">{verdict.label}</h2>
           </div>
@@ -481,9 +509,9 @@ export default function ResultsPage() {
           <div className="space-y-4">
             <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">Original Material</h3>
             <div className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-6 rounded-xl border border-slate-200 prose prose-sm max-w-none">
-               <ReactMarkdown>{data.originalText}</ReactMarkdown>
+              <ReactMarkdown>{data.originalText}</ReactMarkdown>
             </div>
-            
+
             {data.images && data.images.length > 0 && (
               <div className="mt-6">
                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Supporting Media</h4>
@@ -494,7 +522,7 @@ export default function ResultsPage() {
                     ) : (
                       <div key={idx} className="w-full h-48 rounded-xl border border-slate-200 bg-slate-100 flex flex-col items-center justify-center p-4 text-center shadow-sm">
                         <ImageIcon className="w-6 h-6 text-slate-300 mb-2" />
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">External Media Omitted<br/>(View in Web)</span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">External Media Omitted<br />(View in Web)</span>
                       </div>
                     )
                   ))}
@@ -516,14 +544,14 @@ export default function ResultsPage() {
                 <h3 className="text-[10px] font-black text-pink-900 uppercase tracking-widest mb-3">Image Insights</h3>
                 <p className="text-3xl font-black text-pink-600 mb-2">{data.imageAnalysis?.aiProbability || 0}% <span className="text-xs text-pink-800 font-bold uppercase tracking-wider">AI Gen Prob</span></p>
                 <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs text-pink-800 font-bold bg-white/50 px-2 py-1 rounded">Relevance: {data.imageAnalysis.relevance}%</span>
-                    {data.imageAnalysis.deepfake && <span className="text-[10px] font-black uppercase text-red-600 border border-red-300 bg-red-100 px-2 py-1 rounded">Deepfake</span>}
+                  <span className="text-xs text-pink-800 font-bold bg-white/50 px-2 py-1 rounded">Relevance: {data.imageAnalysis.relevance}%</span>
+                  {data.imageAnalysis.deepfake && <span className="text-[10px] font-black uppercase text-red-600 border border-red-300 bg-red-100 px-2 py-1 rounded">Deepfake</span>}
                 </div>
                 <p className="text-xs text-pink-800 leading-relaxed font-medium">{data.imageAnalysis.reasoning}</p>
               </div>
             ) : (
               <div className="border border-dashed border-slate-300 rounded-xl flex items-center justify-center bg-slate-50">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No Image Analytics</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No Image Analytics</p>
               </div>
             )}
           </div>
@@ -548,7 +576,7 @@ export default function ResultsPage() {
                     </div>
                     <p className="font-bold text-sm mb-3">"{claim.claim}"</p>
                     <p className="text-xs opacity-80 mb-4 leading-relaxed font-medium">{claim.reasoning}</p>
-                    
+
                     {claim.sources?.length > 0 && (
                       <div className="pt-3 border-t border-black/10 flex flex-col gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest opacity-50">Cited Sources</span>

@@ -273,6 +273,10 @@ ${imageAnalysisParser.getFormatInstructions()}`;
             `You are a verification assistant. I will provide a list of claims and corresponding search results for each claim.
   Grade each claim based STRICTLY on the search contexts provided as VERIFIED TRUE, PARTIALLY TRUE, VERIFIED FALSE, or UNVERIFIABLE.
   If there is completely insufficient evidence or no sources supporting or refuting the claim, grade it as UNVERIFIABLE.
+  CRITICAL RULES FOR "UNVERIFIABLE":
+  1. If there is completely insufficient evidence or no sources supporting or refuting the claim, grade it as UNVERIFIABLE.
+  2. If a claim is a subjective opinion, a matter of personal taste, or a philosophical belief, you MUST grade it as UNVERIFIABLE.
+  3. If a claim is a prediction about the future that fundamentally cannot be proven with current historical or scientific facts, you MUST grade it as UNVERIFIABLE.
   Give it a confidence score mapping to your certainty level (0 to 100).
   Provide reasoning and strictly cite sources using the titles and urls provided in the context. If no sources support the claim, or if no context exists, explicitly state lack of evidence.
   Provide general AI reasoning on the tone or potential bias.
@@ -306,8 +310,16 @@ ${imageAnalysisParser.getFormatInstructions()}`;
           const unverifiableCount = verifiedClaimsList.filter((c: any) => c.status === "UNVERIFIABLE").length;
           const totalClaims = verifiedClaimsList.length;
 
-          // Accuracy Calculation: (True * 100 + Partial * 50 + Unverifiable * 0 + False * 0) / Total
-          const accuracy = totalClaims > 0 ? Math.round(((trueCount * 100) + (partialCount * 50)) / totalClaims) : 0;
+          // Calculate verifiable counts (exclude opinions from the math!)
+          const verifiableCount = trueCount + partialCount + falseCount;
+
+          // Accuracy Calculation: Only grade the claims that CAN be verified
+          const accuracy = verifiableCount > 0 
+            ? Math.round(((trueCount * 100) + (partialCount * 50)) / verifiableCount) 
+            : 0;
+
+          // Check if majority (>50%) of the extracted claims are labeled UNVERIFIABLE
+          const isUnverifiableMajority = unverifiableCount > (totalClaims / 2);
 
           // Embed original text in the payload for the results page
           const finalPayload = {
@@ -317,6 +329,7 @@ ${imageAnalysisParser.getFormatInstructions()}`;
             partialCount,
             falseCount,
             unverifiableCount,
+            isUnverifiableMajority,
             originalText: originalContentToDisplay,
             images: images,
             aiDetection: aiDetectionResult,

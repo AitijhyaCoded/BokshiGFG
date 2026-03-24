@@ -7,10 +7,7 @@ import { HistoryCard } from '@/components/history-card';
 export const revalidate = 0; // Dynamic server component
 
 export default async function HistoryPage() {
-  const history = await db.query.verifications.findMany({
-    orderBy: [desc(verifications.createdAt)],
-    limit: 100,
-  });
+  const history = await db.select().from(verifications).orderBy(desc(verifications.createdAt)).limit(100);
 
   return (
     <div className="min-h-full p-8 lg:p-12 max-w-6xl mx-auto flex flex-col">

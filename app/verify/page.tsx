@@ -109,7 +109,7 @@ export default function VerifyPage() {
   return (
     <div className="min-h-full p-8 lg:p-12 max-w-6xl mx-auto flex flex-col">
       {/* Top Bar */}
-      <header className="flex items-center justify-between mb-12 border-b border-white/5 pb-6">
+      {/* <header className="flex items-center justify-between mb-12 border-b border-white/5 pb-6">
         <div className="flex items-center gap-8">
           <h1 className="text-2xl font-semibold text-[#7dd3fc]">Analysis State</h1>
           <nav className="flex gap-6 text-sm font-medium">
@@ -121,7 +121,7 @@ export default function VerifyPage() {
           <Button variant="secondary" className="py-2 px-4 rounded-full text-xs">Upgrade</Button>
           <div className="w-8 h-8 rounded-full bg-slate-700" />
         </div>
-      </header>
+      </header> */}
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Left Column: Progress Tracker */}

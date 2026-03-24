@@ -10,5 +10,7 @@ export const verifications = pgTable('verifications', {
   unverifiableCount: integer('unverifiable_count').notNull().default(0),
   aiReasoning: text('ai_reasoning').notNull(),
   verifiedClaims: jsonb('verified_claims').notNull().$type<any[]>(),
+  textForensics: jsonb('text_forensics').$type<any>(),
+  imageForensics: jsonb('image_forensics').$type<any>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

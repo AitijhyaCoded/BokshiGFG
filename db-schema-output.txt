@@ -1,0 +1,13 @@
+Columns in verifications table:
+- id: uuid
+- image_forensics: jsonb
+- unverifiable_count: integer
+- accuracy: integer
+- true_count: integer
+- partial_count: integer
+- false_count: integer
+- verified_claims: jsonb
+- created_at: timestamp without time zone
+- text_forensics: jsonb
+- original_text: text
+- ai_reasoning: text
