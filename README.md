@@ -24,7 +24,7 @@
 * **AI Engine**: Google Gemini API via `@google/genai` and LangChain.
 * **Database**: Neon (Serverless Postgres) with Drizzle ORM.
 * **Export Tools**: jsPDF, html2canvas, and html-to-image.
-
+* **Search Engine**: Tavily AI (Optimized for LLM agents).
 ## ⚙️ Getting Started
 
 ### Prerequisites
