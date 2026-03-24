@@ -31,6 +31,10 @@
   50% { opacity: .7; filter: drop-shadow(0 0 5px rgba(125, 211, 252, 0.2)); }
 }
 
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
 @layer base {
   body {
     background-color: var(--color-background);

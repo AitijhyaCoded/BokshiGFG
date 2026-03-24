@@ -13,14 +13,15 @@ export function GlassCard({ children, className, elevated = false, ...props }: G
   return (
     <div 
       className={cn(
-        "rounded-2xl border border-[#7dd3fc]/10",
+        "rounded-2xl border transition-all duration-500 relative overflow-hidden",
         elevated 
-          ? "bg-[#0f1524]/75 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]" 
-          : "bg-[#0f1524]/60 backdrop-blur-md",
+          ? "bg-gradient-to-br from-[#0f172a]/90 to-[#0a0e1a]/90 backdrop-blur-2xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]" 
+          : "bg-gradient-to-br from-[#0f172a]/50 to-[#0a0e1a]/50 backdrop-blur-xl border-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.3)] hover:border-white/10",
         className
       )}
       {...props}
     >
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
       {children}
     </div>
   );

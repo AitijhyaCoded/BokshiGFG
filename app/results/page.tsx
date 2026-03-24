@@ -104,15 +104,15 @@ export default function ResultsPage() {
               const isUnverifiable = bestMatch.status === "UNVERIFIABLE";
 
               const highlightClass = isTrue
-                ? "bg-emerald-500/20 text-emerald-400 border-b-2 border-emerald-500/50"
+                ? "text-emerald-300 bg-emerald-500/5 underline underline-offset-4 decoration-2 decoration-emerald-500/60 hover:bg-emerald-500/15 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                 : isPartial
-                  ? "bg-amber-500/20 text-amber-400 border-b-2 border-amber-500/50"
+                  ? "text-amber-300 bg-amber-500/5 underline underline-offset-4 decoration-2 decoration-amber-500/60 hover:bg-amber-500/15 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]"
                   : isUnverifiable
-                    ? "bg-slate-500/20 text-slate-400 border-b-2 border-slate-500/50"
-                    : "bg-red-500/20 text-red-400 border-b-2 border-red-500/50";
+                    ? "text-slate-300 bg-slate-500/5 underline underline-offset-4 decoration-2 decoration-slate-500/60 hover:bg-slate-500/15 hover:shadow-[0_0_15px_rgba(148,163,184,0.2)]"
+                    : "text-red-300 bg-red-500/5 underline underline-offset-4 decoration-2 decoration-red-500/60 hover:bg-red-500/15 hover:shadow-[0_0_15px_rgba(239,68,68,0.2)]";
 
               return (
-                <span key={`${childIdx}-${sentIdx}`} className={cn("px-1 py-0.5 rounded-sm transition-colors duration-300", highlightClass)}>
+                <span key={`${childIdx}-${sentIdx}`} className={cn("inline transition-all duration-300 cursor-help", highlightClass)} title={`Matched Claim: ${bestMatch.claim}`}>
                   {sentence}
                 </span>
               );
@@ -127,9 +127,9 @@ export default function ResultsPage() {
   }, [data?.verifiedClaims]);
 
   if (!data) return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-white gap-4 bg-[#050810]">
-      <div className="w-12 h-12 border-4 border-[#7dd3fc]/20 border-t-[#7dd3fc] rounded-full animate-spin" />
-      <p className="text-slate-400 font-medium animate-pulse">Reconstructing verification data...</p>
+    <div className="flex-1 flex flex-col items-center justify-center text-white gap-4 bg-transparent mt-32 relative z-10">
+      <div className="w-12 h-12 border-4 border-[#7dd3fc]/20 border-t-[#7dd3fc] rounded-full animate-spin shadow-[0_0_15px_rgba(125,211,252,0.3)]" />
+      <p className="text-slate-400 font-medium animate-pulse tracking-wide">Reconstructing verification data...</p>
     </div>
   );
 
@@ -153,7 +153,7 @@ export default function ResultsPage() {
   const verdict = getVerdict();
 
   return (
-    <div className="min-h-full p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8 pb-24">
+    <div className="min-h-full p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8 pb-24 relative z-10">
       {/* Top Banner / Verdict */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -161,11 +161,14 @@ export default function ResultsPage() {
         className="flex flex-col md:flex-row items-center justify-between gap-6"
       >
         <div className="flex items-center gap-6">
-          <div className={cn("px-6 py-3 rounded-2xl border flex items-center gap-3", verdict.bg, verdict.color, verdict.border, verdict.glow)}>
-            <verdict.icon className="w-6 h-6" />
+          <div className={cn("px-8 py-5 rounded-3xl border flex items-center gap-4 relative overflow-hidden group", verdict.bg, verdict.color, verdict.border, verdict.glow)}>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
+            <div className={cn("p-3 rounded-xl bg-black/20 backdrop-blur-md border", verdict.border)}>
+              <verdict.icon className="w-8 h-8 drop-shadow-[0_0_10px_currentColor]" />
+            </div>
             <div>
-              <p className="text-[10px] font-black tracking-[0.2em] uppercase opacity-80">Final Verdict</p>
-              <h2 className="text-xl font-bold">{verdict.label}</h2>
+              <p className="text-[11px] font-black tracking-[0.25em] uppercase opacity-70 mb-1">Final Verdict</p>
+              <h2 className="text-3xl font-extrabold tracking-tight drop-shadow-md">{verdict.label}</h2>
             </div>
           </div>
 
@@ -304,18 +307,18 @@ export default function ResultsPage() {
                     transition={{ delay: 0.05 * idx }}
                   >
                     <GlassCard className={cn("p-5 border-l-2", isTrue ? "border-l-emerald-500" : isPartial ? "border-l-amber-500" : isUnverifiable ? "border-l-slate-500" : "border-l-red-500")}>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className={cn("text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border", colorClass, borderClass, bgClass)}>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-md border", colorClass, borderClass, bgClass, "shadow-[0_0_15px_currentColor]/20")}>
                           {claim.status}
                         </span>
                         <div className="flex flex-col items-end">
-                          <span className="text-xs font-bold text-white leading-none">{claim.confidence}%</span>
-                          <span className="text-[8px] uppercase tracking-tighter text-slate-500 font-bold">Certainty</span>
+                          <span className="text-sm font-black text-white leading-none tracking-tight">{claim.confidence}%</span>
+                          <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mt-1">Certainty</span>
                         </div>
                       </div>
 
-                      <div className={cn("p-4 rounded-xl mb-4 shadow-sm", highlightClass)}>
-                        <p className="text-sm font-semibold leading-relaxed">
+                      <div className={cn("p-5 rounded-2xl mb-4 shadow-inner border border-white/5", highlightClass)}>
+                        <p className="text-[15px] font-semibold leading-relaxed tracking-wide">
                           "{claim.claim}"
                         </p>
                       </div>
@@ -356,8 +359,8 @@ export default function ResultsPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <GlassCard className="p-6 bg-gradient-to-br from-[#7dd3fc]/10 via-transparent to-transparent border-[#7dd3fc]/20 relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#7dd3fc]/10 rounded-full blur-3xl group-hover:bg-[#7dd3fc]/20 transition-colors" />
+            <GlassCard className="p-6 bg-gradient-to-br from-[#7dd3fc]/10 via-black/40 to-transparent border-[#7dd3fc]/20 hover:border-[#7dd3fc]/40 hover:shadow-[0_0_30px_rgba(125,211,252,0.15)] transition-all duration-500 relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#7dd3fc]/10 rounded-full blur-2xl group-hover:bg-[#7dd3fc]/30 group-hover:scale-150 transition-all duration-700" />
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Fingerprint className="w-4 h-4 text-[#7dd3fc]" />
@@ -397,8 +400,8 @@ export default function ResultsPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <GlassCard className="p-6 bg-gradient-to-br from-[#c8a0f0]/10 via-transparent to-transparent border-[#c8a0f0]/20 relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#c8a0f0]/10 rounded-full blur-3xl group-hover:bg-[#c8a0f0]/20 transition-colors" />
+            <GlassCard className="p-6 bg-gradient-to-br from-[#c8a0f0]/10 via-black/40 to-transparent border-[#c8a0f0]/20 hover:border-[#c8a0f0]/40 hover:shadow-[0_0_30px_rgba(200,160,240,0.15)] transition-all duration-500 relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#c8a0f0]/10 rounded-full blur-2xl group-hover:bg-[#c8a0f0]/30 group-hover:scale-150 transition-all duration-700" />
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-[#c8a0f0]" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8a0f0]">AI Insight</h3>
@@ -415,8 +418,8 @@ export default function ResultsPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.45 }}
           >
-            <GlassCard className="p-6 bg-gradient-to-br from-[#f472b6]/10 via-transparent to-transparent border-[#f472b6]/20 relative overflow-hidden group flex flex-col gap-4">
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#f472b6]/10 rounded-full blur-3xl group-hover:bg-[#f472b6]/20 transition-colors" />
+            <GlassCard className="p-6 bg-gradient-to-br from-[#f472b6]/10 via-black/40 to-transparent border-[#f472b6]/20 hover:border-[#f472b6]/40 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)] transition-all duration-500 relative overflow-hidden group flex flex-col gap-4">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#f472b6]/10 rounded-full blur-2xl group-hover:bg-[#f472b6]/30 group-hover:scale-150 transition-all duration-700" />
               <div className="flex items-center gap-2 mb-2 relative z-10">
                 <ImageIcon className="w-4 h-4 text-[#f472b6]" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[#f472b6]">Image Insights</h3>

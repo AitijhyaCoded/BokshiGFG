@@ -42,10 +42,14 @@ export function HistoryCard({ record }: HistoryCardProps) {
     <GlassCard
       onClick={() => setIsExpanded(!isExpanded)}
       className={cn(
-        "p-6 flex flex-col gap-4 cursor-pointer transition-all duration-300",
-        isExpanded ? "border-[#7dd3fc]/30 shadow-[0_0_20px_rgba(125,211,252,0.1)]" : "hover:border-[#7dd3fc]/20"
+        "p-6 flex flex-col gap-4 cursor-pointer transition-all duration-500 group relative overflow-hidden",
+        isExpanded 
+          ? "border-[#7dd3fc]/40 shadow-[0_0_30px_rgba(125,211,252,0.15)] bg-white/10" 
+          : "hover:border-[#7dd3fc]/30 hover:bg-white/10 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(125,211,252,0.1)]"
       )}
     >
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#7dd3fc]/10 to-transparent blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
       {/* ALWAYS VISIBLE HEADER */}
       <div className="flex items-start justify-between">
         <span className={cn("text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-md border", color, bg, border)}>

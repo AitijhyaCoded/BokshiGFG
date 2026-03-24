@@ -107,7 +107,7 @@ export default function VerifyPage() {
   }, [router]);
 
   return (
-    <div className="min-h-full p-8 lg:p-12 max-w-6xl mx-auto flex flex-col">
+    <div className="min-h-full p-8 lg:p-12 max-w-6xl mx-auto flex flex-col relative z-10">
       {/* Top Bar */}
       {/* <header className="flex items-center justify-between mb-12 border-b border-white/5 pb-6">
         <div className="flex items-center gap-8">
@@ -126,11 +126,11 @@ export default function VerifyPage() {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Left Column: Progress Tracker */}
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7dd3fc]/10 border border-[#7dd3fc]/20 text-[10px] font-bold uppercase tracking-wider text-[#7dd3fc] mb-6">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#7dd3fc] animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#7dd3fc]/10 border border-[#7dd3fc]/20 text-[10px] font-bold uppercase tracking-wider text-[#7dd3fc] mb-6 shadow-[0_0_20px_rgba(125,211,252,0.1)]">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#7dd3fc] animate-pulse shadow-[0_0_10px_#7dd3fc]" />
             Active Analysis
           </div>
-          <h2 className="text-4xl font-bold text-white mb-4 tracking-tight">Verifying Accuracy...</h2>
+          <h2 className="text-4xl font-bold text-white mb-4 tracking-tight drop-shadow-md">Verifying Accuracy...</h2>
           <p className="text-slate-400 mb-12 text-lg">
             Our multi-agent AI is cross-referencing claims against established databases and real-time news feeds.
           </p>
@@ -158,9 +158,9 @@ export default function VerifyPage() {
                 return (
                   <div key={step.id} className="flex gap-6 relative z-10">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${
-                      isActive ? 'bg-[#7dd3fc]/20 border border-[#7dd3fc] text-[#7dd3fc] shadow-[0_0_15px_rgba(125,211,252,0.2)]' :
-                      isPast ? 'bg-[#0f1524] border border-white/20 text-slate-400' :
-                      'bg-[#0f1524] border border-white/5 text-slate-600'
+                      isActive ? 'bg-[#7dd3fc]/20 border border-[#7dd3fc] text-[#7dd3fc] shadow-[0_0_20px_rgba(125,211,252,0.4)]' :
+                      isPast ? 'bg-white/5 border border-white/20 text-slate-400' :
+                      'bg-white/5 border border-white/5 text-slate-600'
                     }`}>
                       <step.icon className="w-5 h-5" />
                     </div>
@@ -221,9 +221,9 @@ export default function VerifyPage() {
             </div> */}
             
             {/* Terminal Feed */}
-            <div className="flex-1 bg-[#050810] rounded-xl p-4 font-mono text-[10px] text-slate-400 overflow-hidden relative border border-white/5">
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#050810] pointer-events-none" />
-              <div className="space-y-2">
+            <div className="flex-1 bg-black/40 backdrop-blur-md rounded-xl p-4 font-mono text-[10px] text-slate-400 overflow-hidden relative border border-white/10 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]">
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 pointer-events-none z-10" />
+              <div className="space-y-2 relative z-0">
                 {logs.map((log, i) => (
                   <motion.div 
                     key={i}

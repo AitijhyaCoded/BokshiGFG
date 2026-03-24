@@ -82,16 +82,6 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen w-full flex flex-col bg-transparent overflow-x-hidden selection:bg-[#7dd3fc]/30 selection:text-white">
-      {/* Animated Abstract Backgrounds */}
-      <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
-        <div className="absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-[#c8a0f0]/10 blur-[150px] animate-breathe mix-blend-screen" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full bg-[#7dd3fc]/10 blur-[150px] animate-breathe mix-blend-screen" style={{ animationDelay: '4s' }} />
-        <div className="absolute top-[40%] left-[20%] w-[30vw] h-[30vw] rounded-full bg-blue-500/5 blur-[120px] animate-float" />
-        
-        {/* Subtle grid pattern overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_0%,#000_70%,transparent_100%)]" />
-      </div>
-
       <div className="flex-1 max-w-7xl mx-auto w-full px-6 lg:px-12 pt-6 pb-20">
         
         {/* Top Header */}
