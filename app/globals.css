@@ -3,6 +3,7 @@
 @theme {
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --color-background: #030712;
+  --color-foreground: #f8fafc;
   --color-primary: #7dd3fc;
   --color-tertiary: #c8a0f0;
   --color-glass-base: rgba(15, 23, 42, 0.4);
@@ -38,7 +39,7 @@
 @layer base {
   body {
     background-color: var(--color-background);
-    color: white;
+    color: var(--color-foreground);
     font-family: var(--font-sans);
   }
 }
@@ -65,3 +66,29 @@
 .transform-style-3d {
   transform-style: preserve-3d;
 }
+
+/* Light Mode Overrides */
+.light {
+  --color-background: #eef2ff;
+  --color-foreground: #1A243B; /* Neutral */
+}
+
+/* Override arbitrary values used in the codebase specifically for light mode */
+.light .text-white { color: var(--color-foreground) !important; }
+.light .bg-\[\#0a0e1a\] { background-color: #f8fafc !important; }
+.light .bg-\[\#030712\] { background-color: #e2e8f0 !important; }
+.light .bg-\[\#0f172a\] { background-color: #f1f5f9 !important; }
+.light .text-slate-200 { color: var(--color-foreground) !important; }
+.light .text-slate-300 { color: #334155 !important; }
+.light .text-slate-400 { color: #475569 !important; }
+.light .text-slate-500 { color: #64748b !important; }
+.light .bg-slate-800\/50 { background-color: rgba(136, 180, 204, 0.2) !important; }
+.light .hover\:bg-slate-700:hover { background-color: rgba(136, 180, 204, 0.4) !important; }
+.light .border-white\/10 { border-color: rgba(26, 36, 59, 0.1) !important; }
+.light .border-white\/20 { border-color: rgba(26, 36, 59, 0.2) !important; }
+.light .bg-white\/5 { background-color: rgba(26, 36, 59, 0.05) !important; }
+.light .from-\[\#0f172a\]\/80 { --tw-gradient-from: rgba(241, 245, 249, 0.8) !important; }
+.light .to-\[\#030712\]\/90 { --tw-gradient-to: rgba(226, 232, 240, 0.9) !important; }
+.light .bg-slate-900\/30 { background-color: rgba(226, 232, 240, 0.5) !important; }
+.light .hover\:text-white:hover { color: var(--color-primary) !important; }
+

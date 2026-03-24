@@ -1,11 +1,13 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, LayoutDashboard, History, Shield, Settings, LifeBuoy, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, History, Shield, Settings, LifeBuoy, LogOut, ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useSidebar } from '@/hooks/use-sidebar';
+import { useTheme } from 'next-themes';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -17,6 +19,12 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { isCollapsed, toggle } = useSidebar();
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <motion.div
@@ -108,6 +116,20 @@ export function Sidebar() {
 
       {/* Bottom Actions */}
       <div className={clsx("p-4 space-y-2", isCollapsed && "flex flex-col items-center")}>
+        {mounted && (
+          <button 
+            suppressHydrationWarning 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className={clsx(
+              "flex items-center rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors h-12 w-full",
+              isCollapsed ? "justify-center px-0" : "px-4 gap-3"
+            )}
+            title={isCollapsed ? "Toggle Theme" : undefined}
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5 shrink-0" /> : <Moon className="w-5 h-5 shrink-0" />}
+            {!isCollapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+          </button>
+        )}
         <button 
           suppressHydrationWarning 
           className={clsx(
