@@ -213,7 +213,7 @@ export default function LandingPage() {
                     <Button variant="ghost" className={`py-2.5 px-4 text-sm font-medium rounded-xl transition-colors ${isListening ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'hover:bg-white/10'}`} onClick={toggleListening}>
                       <Mic className={`w-4 h-4 mr-2 ${isListening ? 'animate-pulse' : ''}`} /> {isListening ? 'Listening...' : 'Voice'}
                     </Button>
-                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,image/*,.mp3,.wav,.m4a,audio/*" />
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,image/*,.mp3,.wav,.m4a,audio/*,.mp4" />
                   </div>
                   <Button 
                     onClick={handleVerify} 

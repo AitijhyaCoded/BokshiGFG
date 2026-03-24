@@ -47,20 +47,47 @@ export async function POST(req: NextRequest) {
           if (mode === 'url') {
             sendStatus('extracting');
             sendLog('FETCHING URL CONTENT VIA TAVILY...');
-            const tavilyRes = await fetch('https://api.tavily.com/extract', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                api_key: process.env.TAVILY_API_KEY, 
-                urls: [input], 
-                include_images: false 
-              })
-            });
-            if (!tavilyRes.ok) throw new Error("Failed to fetch URL content");
             
-            const tavilyData = await tavilyRes.json();
-            const firstResult = tavilyData.results[0];
-            textToVerify = firstResult.raw_content;
+            // Check for YouTube URL
+            const isYoutube = input.includes('youtube.com') || input.includes('youtu.be');
+            
+            let tavilyData;
+            if (isYoutube) {
+              // For YouTube, we'll try to get metadata and description via Tavily, 
+              // but also tell Gemini specifically to analyze the video at the URL.
+              const searchResponse = await fetch('https://api.tavily.com/extract', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  api_key: process.env.TAVILY_API_KEY,
+                  urls: [input],
+                  extract_depth: 'basic'
+                })
+              });
+              if (!searchResponse.ok) throw new Error("Failed to fetch YouTube URL content");
+              const searchData = await searchResponse.json();
+              const pageContent = searchData.results?.[0]?.raw_content || '';
+              const pageTitle = searchData.results?.[0]?.title || '';
+              
+              textToVerify = `URL: ${input}\nTitle: ${pageTitle}\nContext: ${pageContent}\n\nThis is a YouTube video. Gemini, please analyze the video content and frames at this URL to extract core facts.`;
+              tavilyData = searchData; // Keep tavilyData for potential og:image extraction later
+            } else {
+              const tavilyRes = await fetch('https://api.tavily.com/extract', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  api_key: process.env.TAVILY_API_KEY, 
+                  urls: [input], 
+                  include_images: false,
+                  extract_depth: 'basic'
+                })
+              });
+              if (!tavilyRes.ok) throw new Error("Failed to fetch URL content");
+              
+              tavilyData = await tavilyRes.json();
+              const firstResult = tavilyData.results[0];
+              textToVerify = firstResult.raw_content;
+            }
             
             // Specifically look for og:image in the <head>
             try {
@@ -115,6 +142,12 @@ export async function POST(req: NextRequest) {
               { type: "text", text: promptText },
               { type: "media", mimeType: body.fileType, data: base64Data }
             ];
+          } else if (mode === 'file' && body.fileType === 'video/mp4') {
+             const base64Data = input.split(',')[1] || input;
+             extractMessages = [
+                 { type: "text", text: promptText + " Analyze this video and extract the key claims/facts presented." },
+                 { type: "media", mimeType: "video/mp4", data: base64Data }
+             ];
           } else {
             extractMessages = [
               { type: "text", text: promptText }
