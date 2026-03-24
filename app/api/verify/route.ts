@@ -333,7 +333,8 @@ ${imageAnalysisParser.getFormatInstructions()}`;
             originalText: originalContentToDisplay,
             images: images,
             aiDetection: aiDetectionResult,
-            imageAnalysis: imageAnalysisResult
+            imageAnalysis: imageAnalysisResult,
+            fileType: body.fileType
           };
 
           sendLog('VERIFICATION COMPLETE. FINALIZING PAYLOAD...');

@@ -139,7 +139,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="text-lg md:text-xl text-slate-400 max-w-2xl mb-12 font-light leading-relaxed"
           >
-            Instantly decode reality. Paste any news article, social post, or URL to verify authenticity against our multi-layered, deepfake-resistant neural engine.
+            Paste any news article, social post, or URL to verify authenticity against our multi-layered, deepfake-resistant neural engine.
           </motion.p>
 
           {/* Action Area (Verification Box) */}
@@ -162,7 +162,7 @@ export default function LandingPage() {
                   className="w-full h-40 bg-transparent resize-none p-6 text-white placeholder:text-slate-500 focus:outline-none text-xl font-medium relative z-10"
                 />
                 
-                <div className="flex items-center justify-between p-4 border-t border-white/10 relative z-10 bg-slate-900/30">
+                <div className="flex items-center justify-between p-4 border-t border-white/10 relative z-10 bg-slate-900/30 rounded-b-2xl rounded-t-sm">
                   <div className="flex gap-3">
                     <Button variant="ghost" className="py-2.5 px-4 text-sm font-medium rounded-xl hover:bg-white/10 transition-colors" onClick={triggerAddUrl}>
                       <LinkIcon className="w-4 h-4 mr-2" /> Link

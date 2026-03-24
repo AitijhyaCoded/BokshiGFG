@@ -151,6 +151,7 @@ export default function ResultsPage() {
   };
 
   const verdict = getVerdict();
+  const isImageOnly = data.fileType?.startsWith('image/');
 
   return (
     <div className="min-h-full p-6 md:p-12 max-w-7xl mx-auto flex flex-col gap-8 pb-24 relative z-10">
@@ -276,11 +277,22 @@ export default function ResultsPage() {
         <div className="lg:col-span-8 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">Factual claims</h2>
-            <span className="text-xs text-slate-500 font-mono">{data.verifiedClaims?.length} detected</span>
+            <span className="text-xs text-slate-500 font-mono">{isImageOnly ? '0' : data.verifiedClaims?.length} detected</span>
           </div>
 
           <div className="space-y-4">
-            <AnimatePresence>
+            {isImageOnly ? (
+              <GlassCard className="p-12 flex flex-col items-center justify-center text-center border-dashed border-white/10 bg-black/20">
+                <div className="w-16 h-16 rounded-full bg-slate-500/10 flex items-center justify-center mb-4 border border-white/5">
+                  <Fingerprint className="w-8 h-8 text-slate-500/50" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-400 mb-2">No text analysis for image</h3>
+                <p className="text-sm text-slate-500 max-w-sm">
+                  This document was analyzed as a visual asset. Factual claim extraction is currently limited to text-based documents and URLs.
+                </p>
+              </GlassCard>
+            ) : (
+              <AnimatePresence>
               {data.verifiedClaims?.map((claim: any, idx: number) => {
                 const isTrue = claim.status === "VERIFIED TRUE";
                 const isPartial = claim.status === "PARTIALLY TRUE";
@@ -348,6 +360,7 @@ export default function ResultsPage() {
                 );
               })}
             </AnimatePresence>
+            )}
           </div>
         </div>
 
@@ -381,13 +394,13 @@ export default function ResultsPage() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-sm font-bold text-white">{data.aiDetection?.probability || 0}%</span>
+                    <span className="text-sm font-bold text-white">{isImageOnly ? 'N/A' : `${data.aiDetection?.probability || 0}%`}</span>
                   </div>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">AI Probability</p>
                   <p className="text-[10px] text-slate-500 leading-tight">
-                    Likelihood that the content was AI generated.
+                    {isImageOnly ? 'No text analysis for image' : 'Likelihood that the content was AI generated.'}
                   </p>
                 </div>
               </div>
@@ -407,7 +420,7 @@ export default function ResultsPage() {
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[#c8a0f0]">AI Insight</h3>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                {data.aiDetection?.reasoning || data.aiReasoning || "No comprehensive AI analysis was generated for this dataset."}
+                {isImageOnly ? "No text analysis for image" : (data.aiDetection?.reasoning || data.aiReasoning || "No comprehensive AI analysis was generated for this dataset.")}
               </p>
             </GlassCard>
           </motion.div>
@@ -538,8 +551,8 @@ export default function ResultsPage() {
           <div className="grid grid-cols-2 gap-6">
             <div className="bg-purple-50 p-6 rounded-xl border border-purple-200">
               <h3 className="text-[10px] font-black text-purple-900 uppercase tracking-widest mb-3">AI Forensics</h3>
-              <p className="text-3xl font-black text-purple-600 mb-2">{data.aiDetection?.probability || 0}% <span className="text-xs text-purple-800 font-bold uppercase tracking-wider">AI Gen Prob</span></p>
-              <p className="text-xs text-purple-800 leading-relaxed font-medium">{data.aiDetection?.reasoning || data.aiReasoning || "No insights available."}</p>
+              <p className="text-3xl font-black text-purple-600 mb-2">{isImageOnly ? 'N/A' : `${data.aiDetection?.probability || 0}%`} <span className="text-xs text-purple-800 font-bold uppercase tracking-wider">{isImageOnly ? '' : 'AI Gen Prob'}</span></p>
+              <p className="text-xs text-purple-800 leading-relaxed font-medium">{isImageOnly ? "No text analysis for image" : (data.aiDetection?.reasoning || data.aiReasoning || "No insights available.")}</p>
             </div>
 
             {data.images && data.images.length > 0 && data.imageAnalysis ? (
@@ -562,6 +575,11 @@ export default function ResultsPage() {
           {/* Claims */}
           <div className="space-y-4">
             <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">Investigated Claims</h3>
+            {isImageOnly ? (
+              <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200">
+                 <p className="text-sm font-bold text-slate-400 tracking-tight">No text analysis for image</p>
+              </div>
+            ) : (
             <div className="space-y-4">
               {data.verifiedClaims?.map((claim: any, idx: number) => {
                 const isTrue = claim.status === "VERIFIED TRUE";
@@ -596,6 +614,7 @@ export default function ResultsPage() {
                 );
               })}
             </div>
+            )}
           </div>
 
           <div className="text-center pt-8 border-t border-slate-200 pb-4">
