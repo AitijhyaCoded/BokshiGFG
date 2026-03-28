@@ -208,7 +208,7 @@ export default function LandingPage() {
                       <LinkIcon className="w-4 h-4 mr-2" /> Link
                     </Button>
                     <Button variant="ghost" className="py-2.5 px-4 text-sm font-medium rounded-xl hover:bg-white/10 transition-colors" onClick={() => fileInputRef.current?.click()}>
-                      <FileText className="w-4 h-4 mr-2" /> Document
+                      <FileText className="w-4 h-4 mr-2" /> File
                     </Button>
                     <Button variant="ghost" className={`py-2.5 px-4 text-sm font-medium rounded-xl transition-colors ${isListening ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'hover:bg-white/10'}`} onClick={toggleListening}>
                       <Mic className={`w-4 h-4 mr-2 ${isListening ? 'animate-pulse' : ''}`} /> {isListening ? 'Listening...' : 'Voice'}

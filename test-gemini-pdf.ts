@@ -4,7 +4,7 @@ import fs from "fs";
 
 async function run() {
   const gemini = new ChatGoogleGenerativeAI({
-    modelName: "gemini-1.5-flash",
+    model: "gemini-1.5-flash",
   });
 
   const msg = new HumanMessage({
@@ -22,7 +22,7 @@ async function run() {
   try {
     const res = await gemini.invoke([msg]);
     console.log("Response:", res.content);
-  } catch (e) {
+  } catch (e: any) {
     console.error("Error:", e.message);
   }
 }

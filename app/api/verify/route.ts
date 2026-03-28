@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
         try {
           const gemini = new ChatGoogleGenerativeAI({
-            model: 'gemini-3.1-flash-lite-preview',
+            model: 'gemini-1.5-flash',
             maxOutputTokens: 8192,
           });
 
